@@ -14,6 +14,9 @@ const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "Please fill all fields" });
+    }
     // 1. Check if user exists
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -32,10 +35,12 @@ const registerUser = async (req, res) => {
     });
 
     // 4. Send response with token
-    res.status(201).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
+    res.status(200).json({
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -47,6 +52,9 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: "Please fill all fields" });
+    }
     // 1. Check user exists
     const user = await User.findOne({ email });
     if (!user) {
@@ -62,9 +70,11 @@ const loginUser = async (req, res) => {
 
     // 3. Return user + token
     res.status(200).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
       token: generateToken(user._id),
     });
   } catch (error) {
@@ -72,4 +82,8 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser };
+const getMe = async (req, res) => {
+  res.status(200).json(req.user);
+};
+
+module.exports = { registerUser, loginUser, getMe };
