@@ -1,12 +1,38 @@
 import { useState } from 'react'
+import { login } from '../services/authService'
+import { useNavigate } from 'react-router-dom'
 
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = e => {
+  const navigate = useNavigate()
+
+  const handleSubmit = async e => {
     e.preventDefault()
-    console.log(email, password)
+
+    if (!email || !password) {
+      alert('Please fill all fields')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const data = await login({
+        email: email.trim(),
+        password: password.trim()
+      })
+
+      localStorage.setItem('token', data.token)
+      navigate('/dashboard')
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -32,8 +58,14 @@ const Login = () => {
         <br />
         <br />
 
-        <button type='submit'>Login</button>
+        <button type='submit' disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
+        </button>
       </form>
+
+      <p>
+        Don’t have an account? <a href='/register'>Register</a>
+      </p>
     </div>
   )
 }
