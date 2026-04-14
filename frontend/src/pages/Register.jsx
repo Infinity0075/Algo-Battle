@@ -6,10 +6,35 @@ const Register = () => {
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = e => {
+  const navigate = useNavigate()
+
+  const handleSubmit = async e => {
     e.preventDefault()
-    console.log(username, email, password)
+
+    if (!username || !email || !password) {
+      alert('Please fill all fields')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const data = await register({
+        username: username.trim(),
+        email: email.trim(),
+        password: password.trim()
+      })
+
+      localStorage.setItem('token', data.token)
+      navigate('/dashboard')
+    } catch (error) {
+      console.error(error)
+      alert(error.response?.data?.message || 'Registration failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -44,8 +69,14 @@ const Register = () => {
         <br />
         <br />
 
-        <button type='submit'>Register</button>
+        <button type='submit' disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
+        </button>
       </form>
+
+      <p>
+        Already have an account? <a href='/login'>Login</a>
+      </p>
     </div>
   )
 }
