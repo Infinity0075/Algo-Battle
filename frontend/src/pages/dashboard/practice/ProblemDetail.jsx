@@ -7,7 +7,6 @@ function ProblemDetail () {
   const problem = problems.find(p => p.id === Number(id))
 
   const [code, setCode] = useState('')
-
   const [result, setResult] = useState('')
 
   if (!problem) {
@@ -25,14 +24,20 @@ function ProblemDetail () {
 
       <hr />
 
-      {/* Code Editor */}
+      {/* Editor */}
       <h2>Write your code:</h2>
 
       <textarea
         value={code}
         onChange={e => setCode(e.target.value)}
         rows={10}
-        style={{ width: '100%', marginTop: '10px' }}
+        style={{
+          width: '100%',
+          marginTop: '10px',
+          padding: '10px',
+          borderRadius: '8px',
+          border: '1px solid #ccc'
+        }}
         placeholder='Write your code here...'
       />
 
@@ -42,7 +47,7 @@ function ProblemDetail () {
           onClick={() => {
             setResult('Running...')
             setTimeout(() => {
-              setResult('Output: [1, 2]') // fake output
+              setResult('Output: [1, 2]')
             }, 1000)
           }}
         >
@@ -52,23 +57,22 @@ function ProblemDetail () {
         <button
           onClick={() => {
             const isCorrect = Math.random() > 0.5
-
-            if (isCorrect) {
-              setResult('✅ Correct Answer!')
-            } else {
-              setResult('❌ Wrong Answer. Try again.')
-            }
+            setResult(
+              isCorrect ? '✅ Correct Answer!' : '❌ Wrong Answer. Try again.'
+            )
           }}
           style={{ marginLeft: '10px' }}
         >
           Submit
         </button>
-        {result && (
-          <div style={{ marginTop: '15px' }}>
-            <strong>{result}</strong>
-          </div>
-        )}
       </div>
+
+      {/* Result */}
+      {result && (
+        <div style={{ marginTop: '15px' }}>
+          <strong>{result}</strong>
+        </div>
+      )}
     </div>
   )
 }

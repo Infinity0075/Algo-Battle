@@ -1,14 +1,12 @@
-import { Outlet } from 'react-router-dom'
+import ProblemList from '../pages/dashboard/practice/ProblemList'
 
-function DashboardLayout () {
+function Practice () {
   return (
-    <div>
-      {/* Sidebar here */}
-      {/* Topbar optional */}
-
-      <Outlet />
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: '20px' }}>Practice Problems</h1>
+      <ProblemList />
     </div>
   )
 }
 
-export default DashboardLayout
+export default Practice

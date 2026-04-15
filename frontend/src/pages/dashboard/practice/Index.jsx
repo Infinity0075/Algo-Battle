@@ -2,8 +2,8 @@ import ProblemList from './ProblemList'
 
 function Practice () {
   return (
-    <div>
-      <h1>Practice</h1>
+    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
+      <h1 style={{ marginBottom: '20px' }}>Practice Problems</h1>
       <ProblemList />
     </div>
   )

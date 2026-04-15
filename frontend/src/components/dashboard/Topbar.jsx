@@ -1,9 +1,23 @@
-import React from 'react'
+import { useAuth } from '../../context/AuthContext'
 
-const Topbar = () => {
+function Topbar () {
+  const { user, logout } = useAuth()
+
   return (
-    <div>
-      <h1>Topbar</h1>
+    <div
+      style={{
+        height: '60px',
+        background: '#fff',
+        borderBottom: '1px solid #eee',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '0 20px'
+      }}
+    >
+      <h3>Welcome, {user?.name || 'User'}</h3>
+
+      <button onClick={logout}>Logout</button>
     </div>
   )
 }
