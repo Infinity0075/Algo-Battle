@@ -1,12 +1,44 @@
-import ProblemList from '../pages/dashboard/practice/ProblemList'
+import Sidebar from '../components/dashboard/Sidebar'
+import Topbar from '../components/dashboard/Topbar'
+import { Outlet } from 'react-router-dom'
 
-function Practice () {
+function DashboardLayout () {
   return (
-    <div style={{ padding: '20px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '20px' }}>Practice Problems</h1>
-      <ProblemList />
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        background: '#f5f5f5'
+      }}
+    >
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Right Side */}
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        {/* Topbar */}
+        <Topbar />
+
+        {/* Main Content */}
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '20px'
+          }}
+        >
+          {/* 🔥 THIS IS THE MOST IMPORTANT LINE */}
+          <Outlet />
+        </div>
+      </div>
     </div>
   )
 }
 
-export default Practice
+export default DashboardLayout
