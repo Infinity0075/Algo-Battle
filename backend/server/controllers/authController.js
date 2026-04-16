@@ -4,6 +4,9 @@ const jwt = require("jsonwebtoken");
 
 // Generate Token
 const generateToken = (id) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET is not set");
+  }
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
@@ -17,8 +20,11 @@ const registerUser = async (req, res) => {
     if (!username || !email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
+
     // 1. Check if user exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({
+      $or: [{ email: email.toLowerCase() }, { username }],
+    });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
@@ -30,12 +36,12 @@ const registerUser = async (req, res) => {
     // 3. Create user
     const user = await User.create({
       username,
-      email,
+      email: email.toLowerCase(),
       password: hashedPassword,
     });
 
     // 4. Send response with token
-    res.status(200).json({
+    res.status(201).json({
       user: {
         id: user._id,
         username: user.username,
@@ -47,6 +53,7 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // LOGIN USER
 const loginUser = async (req, res) => {
   try {
@@ -56,7 +63,7 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
     // 1. Check user exists
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
@@ -83,7 +90,17 @@ const loginUser = async (req, res) => {
 };
 
 const getMe = async (req, res) => {
-  res.status(200).json(req.user);
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const { _id, username, email, role } = req.user;
+  res.status(200).json({
+    id: _id,
+    username,
+    email,
+    role,
+  });
 };
 
 module.exports = { registerUser, loginUser, getMe };

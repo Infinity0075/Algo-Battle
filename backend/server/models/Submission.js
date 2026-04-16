@@ -8,8 +8,9 @@ const submissionSchema = new mongoose.Schema(
       required: true,
     },
 
-    problemId: {
-      type: String,
+    problem: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Problem",
       required: true,
     },
 
