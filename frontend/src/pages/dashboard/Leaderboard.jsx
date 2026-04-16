@@ -20,19 +20,22 @@ function Leaderboard () {
       {users.map((u, i) => (
         <div
           key={i}
+          onClick={() => navigate(`/dashboard/profile/${u.username}`)} // ✅ FIXED
           style={{
-            padding: '10px',
+            padding: '12px',
             borderBottom: '1px solid #eee',
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'space-between',
+            cursor: 'pointer'
           }}
         >
           <span>
-            #{i + 1} {u.username}
+            {i + 1}. {u.username}
           </span>
-          <span style={{ fontWeight: 'bold' }}>
+
+          <span>
             {u.solved} solved • {u.rating} ⭐
-          </span>{' '}
+          </span>
         </div>
       ))}
     </div>

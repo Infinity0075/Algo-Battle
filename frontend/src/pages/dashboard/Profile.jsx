@@ -1,28 +1,42 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import { getUserProfile } from '../../services/userService'
 
 function Profile () {
   const { username } = useParams()
+  const { user } = useAuth()
 
+  // ✅ FIX: auto fallback to logged-in user
+  const finalUsername = (username || user?.username)?.toLowerCase()
   const [data, setData] = useState(null)
 
   useEffect(() => {
+    if (!finalUsername) return
+
     const fetch = async () => {
-      const res = await getUserProfile(username)
-      setData(res)
+      try {
+        const res = await getUserProfile(finalUsername)
+        setData(res)
+      } catch (err) {
+        console.log('error', err)
+        setData(null)
+      }
     }
 
     fetch()
-  }, [username])
+  }, [finalUsername])
 
-  if (!data) return <h2>Loading...</h2>
+  // ✅ FIX: proper states
+  if (!finalUsername) return <h2>Loading...</h2>
+  if (!data) return <h2>User not found</h2>
 
   return (
     <div style={{ padding: '20px', background: '#f5f7fb', minHeight: '100vh' }}>
       <h1>👤 {data.username}</h1>
-
-      {/* 🔥 Info Card */}
+      <p>
+        <strong>Rating:</strong> ⭐ {data.rating}
+      </p>
       <div
         style={{
           marginTop: '20px',
@@ -36,7 +50,6 @@ function Profile () {
         </p>
       </div>
 
-      {/* 🔥 Stats */}
       <div
         style={{
           marginTop: '20px',
@@ -49,7 +62,6 @@ function Profile () {
         <StatCard title='Submissions' value={data.totalSubmissions} />
       </div>
 
-      {/* 🔥 Recent */}
       <div style={{ marginTop: '20px' }}>
         <div
           style={{
@@ -73,8 +85,9 @@ function Profile () {
                   padding: '8px 0'
                 }}
               >
-                <span>{item.problemId}</span>
-                <span>{item.status}</span>
+                <span>
+                  {item.problemId} {item.status === 'solved' ? '✅' : '⏳'}
+                </span>
               </div>
             ))
           )}

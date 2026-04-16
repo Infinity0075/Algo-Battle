@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const { getLeaderboard } = require("../controllers/userController");
+const {
+  getLeaderboard,
+  getUserProfile,
+} = require("../controllers/userController");
 
 router.get("/leaderboard", getLeaderboard);
 router.get("/:username", getUserProfile);

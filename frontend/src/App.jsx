@@ -49,7 +49,11 @@ function App () {
           <Route path='practice' element={<Practice />} />
           <Route path='battle' element={<Battle />} />
           <Route path='/dashboard/leaderboard' element={<Leaderboard />} />
-          <Route path='/dashboard/profile/:username' element={<Profile />} />
+          <Route path='/dashboard/profile' element={<Profile />} />
+          <Route
+            path='/dashboard/profile/:username'
+            element={<Profile />}
+          />{' '}
         </Route>
 
         {/* Editor Route */}

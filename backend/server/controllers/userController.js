@@ -4,45 +4,45 @@ const User = require("../models/User");
 // 🔥 Leaderboard
 const getLeaderboard = async (req, res) => {
   try {
-    const users = await User.find();
+    // 🔥 get all users sorted by rating
+    const users = await User.find().sort({ rating: -1 }).limit(20);
 
     const leaderboard = [];
 
     for (let user of users) {
-      const submissions = await Submission.find({ user: user._id });
-
-      const solvedSet = new Set();
-
-      submissions.forEach((s) => {
-        if (s.status === "solved") {
-          solvedSet.add(s.problemId);
-        }
+      // 🔥 count unique solved problems
+      const submissions = await Submission.find({
+        user: user._id,
+        status: "solved",
       });
+
+      const solvedSet = new Set(submissions.map((s) => s.problemId));
 
       leaderboard.push({
         username: user.username,
         solved: solvedSet.size,
+        rating: user.rating,
       });
     }
 
-    // 🔥 sort by solved desc
-    leaderboard.sort((a, b) => b.rating - a.rating);
-
-    leaderboard.push({
-      username: user.username,
-      solved: solvedSet.size,
-      rating: user.rating,
-    });
+    // ✅ return response (you forgot this before)
+    res.json(leaderboard);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching leaderboard" });
   }
 };
-
 const getUserProfile = async (req, res) => {
   try {
-    const { username } = req.params;
+    const username = req.params.username;
 
-    const user = await User.findOne({ username });
+    console.log("Searching for:", username); // 🔥 ADD THIS
+
+    const user = await User.findOne({
+      username: { $regex: `^${username}$`, $options: "i" },
+    });
+
+    console.log("FOUND USER:", user); // 🔥 ADD THIS
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -51,7 +51,6 @@ const getUserProfile = async (req, res) => {
     const submissions = await Submission.find({ user: user._id });
 
     const solvedSet = new Set();
-
     submissions.forEach((s) => {
       if (s.status === "solved") {
         solvedSet.add(s.problemId);
@@ -63,10 +62,12 @@ const getUserProfile = async (req, res) => {
       email: user.email,
       totalSolved: solvedSet.size,
       totalSubmissions: submissions.length,
+      rating: user.rating,
       recent: submissions.slice(-5).reverse(),
     });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching profile" });
+    console.error(err);
+    res.status(500).json({ message: "Error fetching user" });
   }
 };
 

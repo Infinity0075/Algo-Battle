@@ -33,13 +33,14 @@ const createSubmission = async (req, res) => {
       language: language || "javascript",
     });
 
-    // 🔥 after submission created
+    // 🔥 UPDATE USER RATING
     const user = await User.findById(req.user.id);
 
     if (status === "solved") {
-      user.rating += 10;
+      user.rating += 10; // easy logic (we improve later)
     } else {
-      user.rating += 2;
+      user.rating -= 2;
+      if (user.rating < 0) user.rating = 0;
     }
 
     await user.save();
