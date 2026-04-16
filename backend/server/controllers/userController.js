@@ -1,7 +1,6 @@
 const Submission = require("../models/Submission");
 const User = require("../models/User");
 
-// 🔥 OPTIMIZED LEADERBOARD (AGGREGATION)
 const getLeaderboard = async (req, res) => {
   try {
     const leaderboard = await Submission.aggregate([
@@ -33,7 +32,7 @@ const getLeaderboard = async (req, res) => {
           solved: 1,
         },
       },
-      { $sort: { rating: -1 } },
+      { $sort: { solved: -1, rating: -1 } },
     ]);
 
     res.json(leaderboard);
@@ -43,7 +42,6 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-// 🔥 USER PROFILE
 const getUserProfile = async (req, res) => {
   try {
     const username = req.params.username;
@@ -60,8 +58,12 @@ const getUserProfile = async (req, res) => {
 
     const solvedSet = new Set();
     submissions.forEach((s) => {
-      if (s.status === "solved") solvedSet.add(s.problemId);
+      if (s.status === "solved") solvedSet.add(String(s.problemId));
     });
+
+    const recent = await Submission.find({ user: user._id })
+      .sort({ createdAt: -1 })
+      .limit(5);
 
     res.json({
       username: user.username,
@@ -69,9 +71,10 @@ const getUserProfile = async (req, res) => {
       rating: user.rating,
       totalSolved: solvedSet.size,
       totalSubmissions: submissions.length,
-      recent: submissions.slice(-5).reverse(),
+      recent,
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error fetching profile" });
   }
 };

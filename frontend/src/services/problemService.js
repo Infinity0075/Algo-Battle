@@ -18,8 +18,8 @@ export const getProblems = async () => {
 };
 
 // ✅ GET SINGLE PROBLEM
-export const getProblem = async (id) => {
-  const res = await API.get(`/problems/${id}`);
+export const getProblem = async (_id) => {
+  const res = await API.get(`/problems/${_id}`);
   return res.data;
 };
 
@@ -30,13 +30,13 @@ export const createProblem = async (data) => {
 };
 
 // ✅ UPDATE
-export const updateProblem = async (id, data) => {
-  const res = await API.put(`/problems/${id}`, data);
+export const updateProblem = async (_id, data) => {
+  const res = await API.put(`/problems/${_id}`, data);
   return res.data;
 };
 
 // ✅ DELETE
-export const deleteProblem = async (id) => {
-  const res = await API.delete(`/problems/${id}`);
+export const deleteProblem = async (_id) => {
+  const res = await API.delete(`/problems/${_id}`);
   return res.data;
 };

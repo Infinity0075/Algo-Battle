@@ -6,6 +6,7 @@ const {
   getRecent,
   getStreak,
   getProblemStatus,
+  clearSubmissions,
 } = require("../controllers/submissionController");
 
 const { protect } = require("../middleware/authMiddleware");
@@ -18,5 +19,6 @@ router.get("/activity", protect, getActivity);
 router.get("/recent", protect, getRecent);
 router.get("/streak", protect, getStreak);
 router.get("/status", protect, getProblemStatus);
+router.delete("/clear", clearSubmissions);
 
 module.exports = router;

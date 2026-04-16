@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 // Generate Token
 const generateToken = (id) => {
   if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is not set");
+    throw new Error("JWT_SECRET is not configured");
   }
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "7d",
@@ -21,9 +21,11 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Please fill all fields" });
     }
 
+    const normalizedEmail = email.toLowerCase();
+
     // 1. Check if user exists
     const userExists = await User.findOne({
-      $or: [{ email: email.toLowerCase() }, { username }],
+      $or: [{ email: normalizedEmail }, { username }],
     });
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
@@ -36,7 +38,7 @@ const registerUser = async (req, res) => {
     // 3. Create user
     const user = await User.create({
       username,
-      email: email.toLowerCase(),
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
@@ -62,8 +64,11 @@ const loginUser = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({ message: "Please fill all fields" });
     }
+
+    const normalizedEmail = email.toLowerCase();
+
     // 1. Check user exists
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }

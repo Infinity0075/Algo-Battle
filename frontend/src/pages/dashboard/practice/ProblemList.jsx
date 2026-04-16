@@ -10,6 +10,7 @@ function ProblemList () {
   const [problems, setProblems] = useState([])
   const [statusMap, setStatusMap] = useState({})
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   const { user } = useAuth()
 
@@ -18,9 +19,16 @@ function ProblemList () {
     const fetchProblems = async () => {
       try {
         const data = await getProblems()
+
+        // ✅ safety check
+        if (!Array.isArray(data)) {
+          throw new Error('Invalid data format')
+        }
+
         setProblems(data)
       } catch (err) {
-        console.error(err)
+        console.error('Problem fetch error:', err)
+        setError('Failed to load problems')
       } finally {
         setLoading(false)
       }
@@ -37,15 +45,23 @@ function ProblemList () {
         if (!token) return
 
         const data = await getProblemStatus(token)
-        setStatusMap(data)
+
+        // ✅ normalize keys to string
+        const normalized = {}
+        Object.keys(data).forEach(key => {
+          normalized[key.toString()] = data[key]
+        })
+
+        setStatusMap(normalized)
       } catch (err) {
-        console.error(err)
+        console.error('Status fetch error:', err)
       }
     }
 
     fetchStatus()
   }, [user])
 
+  // 🔥 Filtering
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title
       .toLowerCase()
@@ -57,10 +73,13 @@ function ProblemList () {
     return matchesSearch && matchesDifficulty
   })
 
+  // 🔥 UI STATES
   if (loading) return <div className='p-6'>Loading problems...</div>
 
+  if (error) return <div className='p-6 text-red-500'>{error}</div>
+
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 p-4'>
       {/* Search */}
       <input
         type='text'
@@ -94,7 +113,7 @@ function ProblemList () {
             <ProblemCard
               key={problem._id}
               problem={problem}
-              status={statusMap[problem._id]}
+              status={statusMap[problem._id?.toString()]}
             />
           ))
         ) : (

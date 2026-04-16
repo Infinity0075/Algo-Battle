@@ -1,12 +1,13 @@
-const Problem = require("../models/Problem");
+const mongoose = require("mongoose");
+const Problem = require("../models/problemModel/Problem");
 
 // 🔥 GET ALL PROBLEMS
 const getProblems = async (req, res) => {
   try {
     const problems = await Problem.find().sort({ createdAt: -1 });
-    res.json(problems);
+    res.status(200).json(problems);
   } catch (err) {
-    console.error(err);
+    console.error("GET PROBLEMS ERROR:", err);
     res.status(500).json({ message: "Error fetching problems" });
   }
 };
@@ -14,14 +15,22 @@ const getProblems = async (req, res) => {
 // 🔥 GET SINGLE PROBLEM
 const getProblemById = async (req, res) => {
   try {
-    const problem = await Problem.findById(req.params.id);
+    const { id } = req.params;
+
+    // ✅ check valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid problem ID" });
+    }
+
+    const problem = await Problem.findById(id);
 
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    res.json(problem);
+    res.status(200).json(problem);
   } catch (err) {
+    console.error("GET SINGLE ERROR:", err);
     res.status(500).json({ message: "Error fetching problem" });
   }
 };
@@ -36,9 +45,10 @@ const createProblem = async (req, res) => {
       examples,
       constraints,
       starterCode,
+      category,
     } = req.body;
 
-    // ✅ basic validation
+    // ✅ validation
     if (!title || !difficulty || !description) {
       return res.status(400).json({ message: "Missing required fields" });
     }
@@ -50,11 +60,12 @@ const createProblem = async (req, res) => {
       examples,
       constraints,
       starterCode,
+      category,
     });
 
     res.status(201).json(problem);
   } catch (err) {
-    console.error(err);
+    console.error("CREATE ERROR:", err);
     res.status(500).json({ message: "Error creating problem" });
   }
 };
@@ -62,18 +73,24 @@ const createProblem = async (req, res) => {
 // 🔥 UPDATE PROBLEM (ADMIN ONLY)
 const updateProblem = async (req, res) => {
   try {
-    const problem = await Problem.findById(req.params.id);
+    const { id } = req.params;
 
-    if (!problem) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid problem ID" });
+    }
+
+    const updated = await Problem.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!updated) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    const updated = await Problem.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-
-    res.json(updated);
+    res.status(200).json(updated);
   } catch (err) {
+    console.error("UPDATE ERROR:", err);
     res.status(500).json({ message: "Error updating problem" });
   }
 };
@@ -81,7 +98,13 @@ const updateProblem = async (req, res) => {
 // 🔥 DELETE PROBLEM (ADMIN ONLY)
 const deleteProblem = async (req, res) => {
   try {
-    const problem = await Problem.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid problem ID" });
+    }
+
+    const problem = await Problem.findById(id);
 
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
@@ -89,8 +112,9 @@ const deleteProblem = async (req, res) => {
 
     await problem.deleteOne();
 
-    res.json({ message: "Problem deleted successfully" });
+    res.status(200).json({ message: "Problem deleted successfully" });
   } catch (err) {
+    console.error("DELETE ERROR:", err);
     res.status(500).json({ message: "Error deleting problem" });
   }
 };

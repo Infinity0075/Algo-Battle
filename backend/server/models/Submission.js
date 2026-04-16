@@ -8,6 +8,7 @@ const submissionSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ✅ FIXED NAME
     problem: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Problem",
@@ -26,7 +27,7 @@ const submissionSchema = new mongoose.Schema(
     },
   },
   {
-    timestamps: true, // 🔥 IMPORTANT
+    timestamps: true,
   },
 );
 

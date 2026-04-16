@@ -13,10 +13,14 @@ const protect = async (req, res, next) => {
     return res.status(401).json({ message: "Not authorized, no token" });
   }
 
+  if (!process.env.JWT_SECRET) {
+    console.error("Auth error: JWT_SECRET is not configured");
+    return res.status(500).json({ message: "Server configuration error" });
+  }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // 🔥 attach full user (including role)
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
@@ -24,7 +28,6 @@ const protect = async (req, res, next) => {
     }
 
     req.user = user;
-
     next();
   } catch (error) {
     console.error("Auth error:", error.message);

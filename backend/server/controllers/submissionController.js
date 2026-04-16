@@ -1,6 +1,8 @@
 const Submission = require("../models/Submission");
+const Problem = require("../models/problemModel/Problem");
+const User = require("../models/User");
 
-// ➤ Create Submission
+// ➤ CREATE SUBMISSION
 const createSubmission = async (req, res) => {
   try {
     const { problemId, status, language } = req.body;
@@ -10,80 +12,76 @@ const createSubmission = async (req, res) => {
       return res.status(400).json({ message: "Problem ID required" });
     }
 
-    // 🔥 check if already solved
+    const problem = await Problem.findById(problemId);
+    if (!problem) {
+      return res.status(404).json({ message: "Problem not found" });
+    }
+
+    // ✅ check if already solved
     const alreadySolved = await Submission.findOne({
       user: userId,
-      problemId,
+      problem: problemId,
       status: "solved",
     });
 
-    // ✅ if already solved → don't duplicate
-    if (alreadySolved) {
-      return res.status(200).json({
-        message: "Already solved",
-        submission: alreadySolved,
-      });
-    }
-
-    // ✅ create new submission
+    // ✅ create submission anyway (for history)
     const submission = await Submission.create({
       user: userId,
-      problemId,
+      problem: problemId,
       status: status || "attempted",
       language: language || "javascript",
     });
 
-    // 🔥 UPDATE USER RATING
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(userId);
 
-    if (status === "solved") {
-      user.rating += 10; // easy logic (we improve later)
-    } else {
-      user.rating -= 2;
-      if (user.rating < 0) user.rating = 0;
+    // 🔥 ONLY update rating if solving FIRST TIME
+    if (status === "solved" && !alreadySolved) {
+      if (problem.difficulty === "Easy") user.rating += 10;
+      else if (problem.difficulty === "Medium") user.rating += 20;
+      else if (problem.difficulty === "Hard") user.rating += 30;
     }
 
     await user.save();
 
-    res.status(201).json(submission);
+    res.status(201).json({
+      message: alreadySolved
+        ? "Already solved (no extra rating)"
+        : "Submission recorded",
+      submission,
+    });
   } catch (err) {
-    console.error("CREATE ERROR:", err);
+    console.error("CREATE SUBMISSION ERROR:", err);
     res.status(500).json({ message: "Error creating submission" });
   }
 };
-// ➤ Stats
+
+// ➤ STATS
 const getStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const submissions = await Submission.find({ user: userId });
+    const submissions = await Submission.find({ user: userId }).populate(
+      "problem",
+    );
 
     const solvedSet = new Set();
-
-    submissions.forEach((s) => {
-      if (s.status === "solved") {
-        solvedSet.add(s.problemId);
-      }
-    });
-
-    // 🔥 difficulty mapping (hardcoded for now)
-    const problemsMap = {
-      "two-sum": "Easy",
-      "reverse-array": "Easy",
-      "max-subarray": "Medium",
-      "longest-substring": "Medium",
-    };
 
     let easy = 0;
     let medium = 0;
     let hard = 0;
 
-    solvedSet.forEach((id) => {
-      const diff = problemsMap[id];
+    submissions.forEach((s) => {
+      if (s.status === "solved" && s.problem) {
+        const id = s.problem._id.toString();
 
-      if (diff === "Easy") easy++;
-      else if (diff === "Medium") medium++;
-      else if (diff === "Hard") hard++;
+        if (!solvedSet.has(id)) {
+          solvedSet.add(id);
+
+          if (s.problem.difficulty === "Easy") easy++;
+          else if (s.problem.difficulty === "Medium") medium++;
+          else if (s.problem.difficulty === "Hard") hard++;
+        }
+      }
     });
 
     res.json({
@@ -98,13 +96,11 @@ const getStats = async (req, res) => {
   }
 };
 
-// ➤ Activity (ONLY solved)
+// ➤ ACTIVITY
 const getActivity = async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const submissions = await Submission.find({
-      user: userId,
+      user: req.user._id,
       status: "solved",
     });
 
@@ -121,12 +117,11 @@ const getActivity = async (req, res) => {
   }
 };
 
-// ➤ Recent
+// ➤ RECENT
 const getRecent = async (req, res) => {
   try {
-    const userId = req.user.id;
-
-    const submissions = await Submission.find({ user: userId })
+    const submissions = await Submission.find({ user: req.user._id })
+      .populate("problem")
       .sort({ createdAt: -1 })
       .limit(5);
 
@@ -136,13 +131,11 @@ const getRecent = async (req, res) => {
   }
 };
 
-// ➤ STREAK SYSTEM
+// ➤ STREAK
 const getStreak = async (req, res) => {
   try {
-    const userId = req.user.id;
-
     const submissions = await Submission.find({
-      user: userId,
+      user: req.user._id,
       status: "solved",
     }).sort({ createdAt: -1 });
 
@@ -170,20 +163,22 @@ const getStreak = async (req, res) => {
   }
 };
 
-// get Problem Status
+// ➤ PROBLEM STATUS
 const getProblemStatus = async (req, res) => {
   try {
-    const userId = req.user._id;
-
-    const submissions = await Submission.find({ user: userId });
+    const submissions = await Submission.find({ user: req.user._id });
 
     const statusMap = {};
 
     submissions.forEach((s) => {
+      const id = s.problem?.toString();
+
+      if (!id) return;
+
       if (s.status === "solved") {
-        statusMap[s.problemId] = "solved";
-      } else if (!statusMap[s.problemId]) {
-        statusMap[s.problemId] = "attempted";
+        statusMap[id] = "solved";
+      } else if (!statusMap[id]) {
+        statusMap[id] = "attempted";
       }
     });
 
@@ -193,6 +188,11 @@ const getProblemStatus = async (req, res) => {
   }
 };
 
+const clearSubmissions = async (req, res) => {
+  await Submission.deleteMany();
+  res.json({ message: "All submissions cleared" });
+};
+
 module.exports = {
   createSubmission,
   getStats,
@@ -200,4 +200,5 @@ module.exports = {
   getRecent,
   getStreak,
   getProblemStatus,
+  clearSubmissions,
 };

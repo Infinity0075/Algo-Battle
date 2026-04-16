@@ -3,6 +3,11 @@ import { useNavigate } from 'react-router-dom'
 function ProblemCard ({ problem, status }) {
   const navigate = useNavigate()
 
+  if (!problem || !problem._id) {
+    console.error('Invalid problem:', problem)
+    return null
+  }
+
   const getDifficultyColor = diff => {
     if (diff === 'Easy') return 'green'
     if (diff === 'Medium') return 'orange'
@@ -12,7 +17,10 @@ function ProblemCard ({ problem, status }) {
 
   return (
     <div
-      onClick={() => navigate(`/dashboard/practice/${problem.id}`)}
+      onClick={() => {
+        console.log('CLICKED:', problem._id) // 🔥 DEBUG
+        navigate(`/dashboard/practice/${problem._id}`)
+      }}
       style={{
         display: 'flex',
         justifyContent: 'space-between',
@@ -21,18 +29,15 @@ function ProblemCard ({ problem, status }) {
         padding: '14px',
         borderRadius: '10px',
         cursor: 'pointer',
-        transition: '0.2s',
         background: 'white'
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#f9f9f9')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'white')}
     >
-      {/* <h3 style={{ margin: 0 }}>{problem.title}</h3> */}
       <span>
         {status === 'solved' && '✅ '}
         {status === 'attempted' && '⏳ '}
         {problem.title}
       </span>
+
       <span
         style={{
           color: 'white',

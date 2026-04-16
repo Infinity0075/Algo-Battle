@@ -8,8 +8,8 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minlength: 3,
       maxlength: 20,
+      unique: true,
     },
-
     email: {
       type: String,
       required: true,
@@ -17,19 +17,15 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
-
     password: {
       type: String,
       required: true,
       minlength: 6,
     },
-
     rating: {
       type: Number,
       default: 1000,
     },
-
-    // 🔥 NEW: ROLE SYSTEM
     role: {
       type: String,
       enum: ["user", "admin"],
@@ -41,7 +37,6 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-// 🔥 Optional: hide password in JSON response
 userSchema.methods.toJSON = function () {
   const user = this.toObject();
   delete user.password;
