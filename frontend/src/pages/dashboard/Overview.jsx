@@ -1,148 +1,212 @@
-import { problems } from '../dashboard/practice/problems'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+
+import { problems } from '../../pages/dashboard/practice/problems'
 import ActivityHeatmap from '../../components/ActivityHeatmap'
-import { activityData } from '../../data/activityData'
+
+import {
+  getStats,
+  getActivity,
+  getRecent,
+  getStreak
+} from '../../services/submissionService'
 
 function Overview () {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
-  const total = problems.length
+  const [stats, setStats] = useState({})
+  const [activityData, setActivityData] = useState({})
+  const [recent, setRecent] = useState([])
+  const [streak, setStreak] = useState(0)
+  const [loading, setLoading] = useState(true)
 
-  const easy = problems.filter(p => p.difficulty === 'Easy').length
-  const medium = problems.filter(p => p.difficulty === 'Medium').length
-  const hard = problems.filter(p => p.difficulty === 'Hard').length
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        if (!user) return
 
-  const solved = 1 // temp
+        const token = user.token
 
-  const activities = [
-    { id: 1, title: 'Solved Two Sum', status: 'Solved' },
-    { id: 2, title: 'Attempted Binary Search', status: 'Attempted' },
-    { id: 3, title: 'Solved Palindrome', status: 'Solved' }
-  ]
+        const statsData = await getStats(token)
+        const activity = await getActivity(token)
+        const recentData = await getRecent(token)
+        const streakData = await getStreak(token)
+
+        setStats(statsData)
+        setActivityData(activity)
+        setRecent(recentData)
+        setStreak(streakData.streak)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [user])
+
+  if (loading) return <h2>Loading dashboard...</h2>
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h1>Dashboard</h1>
+    // 🔥 CHANGED: added background + full height
+    <div style={{ padding: '20px', background: '#f5f7fb', minHeight: '100vh' }}>
+      <h1 style={{ marginBottom: '20px' }}>Dashboard</h1>
 
-      {/* 📊 Stats */}
+      {/* 🔥 CHANGED: grid layout instead of flex */}
       <div
         style={{
-          display: 'flex',
-          gap: '20px',
-          marginTop: '20px',
-          flexWrap: 'wrap'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: '15px'
         }}
       >
-        <StatCard title='Total' value={total} />
-        <StatCard title='Solved' value={solved} />
-        <StatCard title='Easy' value={easy} />
-        <StatCard title='Medium' value={medium} />
-        <StatCard title='Hard' value={hard} />
+        <StatCard title='Total Solved' value={stats.totalSolved || 0} />
+        <StatCard title='Submissions' value={stats.totalSubmissions || 0} />
+        <StatCard title='Easy' value={stats.easy || 0} />
+        <StatCard title='Medium' value={stats.medium || 0} />
+        <StatCard title='Hard' value={stats.hard || 0} />
       </div>
 
-      {/* 🔥 Activity Heatmap */}
+      {/* 🔥 CHANGED: wrapped in SectionCard */}
       <div style={{ marginTop: '30px' }}>
-        <h3>Daily Activity</h3>
-        <ActivityHeatmap data={activityData} />
+        <SectionCard title='Daily Activity'>
+          <ActivityHeatmap data={activityData} />
+        </SectionCard>
       </div>
 
-      {/* 📜 Recent Activity */}
+      {/* 🔥 CHANGED: better card UI */}
       <div style={{ marginTop: '30px' }}>
-        <h3>Recent Activity</h3>
-
-        <div style={{ marginTop: '10px' }}>
-          {activities.map(item => (
-            <div
-              key={item.id}
-              style={{
-                padding: '10px',
-                border: '1px solid #eee',
-                borderRadius: '8px',
-                marginBottom: '10px',
-                background: '#fff',
-                display: 'flex',
-                justifyContent: 'space-between'
-              }}
-            >
-              <span>{item.title}</span>
-
-              <span
+        <SectionCard title='Recent Activity'>
+          {recent.length === 0 ? (
+            <p>No activity yet</p>
+          ) : (
+            recent.map(item => (
+              <div
+                key={item._id}
+                onClick={() =>
+                  navigate(`/dashboard/practice/${item.problemId}`)
+                }
                 style={{
-                  color: item.status === 'Solved' ? 'green' : 'orange',
-                  fontWeight: 'bold'
+                  padding: '10px',
+                  borderBottom: '1px solid #eee',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer'
                 }}
               >
-                {item.status}
-              </span>
-            </div>
-          ))}
-        </div>
+                <span>{item.problemId}</span>
+
+                <span
+                  style={{
+                    color: item.status === 'solved' ? 'green' : 'orange',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {item.status}
+                </span>
+              </div>
+            ))
+          )}
+        </SectionCard>
       </div>
 
-      {/* 🚀 Quick Actions */}
+      {/* 🔥 CHANGED: wrapped in SectionCard */}
       <div style={{ marginTop: '30px' }}>
-        <h3>Quick Actions</h3>
-
-        <div
-          style={{
-            display: 'flex',
-            gap: '15px',
-            marginTop: '10px',
-            flexWrap: 'wrap'
-          }}
-        >
-          <ActionButton
-            label='🚀 Practice'
-            onClick={() => navigate('/dashboard/practice')}
-          />
-
-          <ActionButton
-            label='⚔️ Battle'
-            onClick={() => navigate('/dashboard/battle')}
-          />
-
-          <ActionButton
-            label='📊 Leaderboard'
-            onClick={() => navigate('/dashboard/leaderboard')}
-          />
-        </div>
+        <SectionCard title='Quick Actions'>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <ActionButton
+              label='Practice'
+              onClick={() => navigate('/dashboard/practice')}
+            />
+            <ActionButton
+              label='Battle'
+              onClick={() => navigate('/dashboard/battle')}
+            />
+            <ActionButton
+              label='Leaderboard'
+              onClick={() => navigate('/dashboard/leaderboard')}
+            />
+          </div>
+        </SectionCard>
       </div>
     </div>
   )
 }
 
-/* 🔹 Stat Card */
+/* 🔹 UPDATED StatCard (modern look) */
 function StatCard ({ title, value }) {
   return (
     <div
       style={{
-        border: '1px solid #eee',
+        background: '#fff', // 🔥 CHANGED
         padding: '20px',
-        borderRadius: '10px',
-        minWidth: '150px',
-        textAlign: 'center',
-        background: '#fff'
+        borderRadius: '12px', // 🔥 CHANGED
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)', // 🔥 CHANGED
+        textAlign: 'center'
       }}
     >
-      <h3 style={{ margin: 0 }}>{title}</h3>
-      <p style={{ fontSize: '24px', marginTop: '10px' }}>{value}</p>
+      <p style={{ color: '#888', marginBottom: '5px' }}>{title}</p>{' '}
+      {/* 🔥 CHANGED */}
+      <h2>{value}</h2>
+    </div>
+  )
+}
+{
+  /* 🔥 NEW: Streak Card */
+}
+;<div style={{ marginTop: '20px' }}>
+  <SectionCard title='🔥 Streak'>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}
+    >
+      <div>
+        <h2 style={{ margin: 0 }}>{getStreak} days</h2>
+        <p style={{ color: '#888' }}>
+          {getStreak === 0 ? 'Start your streak today 🚀' : 'Keep it going!'}
+        </p>
+      </div>
+
+      <div style={{ fontSize: '40px' }}>🔥</div>
+    </div>
+  </SectionCard>
+</div>
+
+/* 🔥 NEW COMPONENT: SectionCard */
+function SectionCard ({ title, children }) {
+  return (
+    <div
+      style={{
+        background: '#fff',
+        padding: '20px',
+        borderRadius: '12px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+      }}
+    >
+      <h3 style={{ marginBottom: '15px' }}>{title}</h3>
+      {children}
     </div>
   )
 }
 
-/* 🔹 Action Button */
+/* 🔹 UPDATED Button */
 function ActionButton ({ label, onClick }) {
   return (
     <button
       onClick={onClick}
       style={{
-        padding: '10px 16px',
-        borderRadius: '8px',
+        padding: '10px 16px', // 🔥 CHANGED
+        borderRadius: '8px', // 🔥 CHANGED
         border: 'none',
         background: '#111',
         color: '#fff',
-        cursor: 'pointer',
-        fontSize: '14px'
+        cursor: 'pointer'
       }}
     >
       {label}

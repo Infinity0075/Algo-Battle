@@ -41,16 +41,19 @@ function App () {
             </ProtectedRoute>
           }
         >
-          <Route path='practice/:id' element={<ProblemDetail />} />
+          <Route
+            path='/dashboard/practice/:problemId'
+            element={<ProblemDetail />}
+          />{' '}
           <Route index element={<Overview />} />
-          <Route path='profile' element={<Profile />} />
           <Route path='practice' element={<Practice />} />
           <Route path='battle' element={<Battle />} />
-          <Route path='leaderboard' element={<Leaderboard />} />
+          <Route path='/dashboard/leaderboard' element={<Leaderboard />} />
+          <Route path='/dashboard/profile/:username' element={<Profile />} />
         </Route>
 
         {/* Editor Route */}
-        <Route path='/editor/:roomId' element={<Editor />} />
+        {/* <Route path='/editor/:roomId' element={<Editor />} /> */}
       </Routes>
     </BrowserRouter>
   )

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 
-function ProblemCard ({ problem }) {
+function ProblemCard ({ problem, status }) {
   const navigate = useNavigate()
 
   const getDifficultyColor = diff => {
@@ -27,8 +27,12 @@ function ProblemCard ({ problem }) {
       onMouseEnter={e => (e.currentTarget.style.background = '#f9f9f9')}
       onMouseLeave={e => (e.currentTarget.style.background = 'white')}
     >
-      <h3 style={{ margin: 0 }}>{problem.title}</h3>
-
+      {/* <h3 style={{ margin: 0 }}>{problem.title}</h3> */}
+      <span>
+        {status === 'solved' && '✅ '}
+        {status === 'attempted' && '⏳ '}
+        {problem.title}
+      </span>
       <span
         style={{
           color: 'white',

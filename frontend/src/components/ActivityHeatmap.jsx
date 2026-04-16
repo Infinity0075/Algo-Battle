@@ -1,54 +1,36 @@
 function ActivityHeatmap ({ data }) {
-  const generateDays = () => {
-    const days = []
-    const today = new Date()
+  const days = []
+  const today = new Date()
 
-    for (let i = 69; i >= 0; i--) {
-      const d = new Date()
-      d.setDate(today.getDate() - i)
+  // last 90 days
+  for (let i = 89; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(today.getDate() - i)
 
-      const dateStr = d.toISOString().split('T')[0]
-      days.push(dateStr)
-    }
-
-    return days
+    days.push(d.toISOString().split('T')[0])
   }
 
-  const days = generateDays()
-
   const getColor = count => {
-    if (!count) return '#e5e7eb' // gray
-    if (count === 1) return '#86efac'
-    if (count === 2) return '#4ade80'
-    return '#16a34a'
+    if (!count) return '#ebedf0'
+    if (count === 1) return '#9be9a8'
+    if (count === 2) return '#40c463'
+    return '#30a14e'
   }
 
   return (
-    <div style={{ marginTop: '10px' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(10, 1fr)',
-          gap: '6px'
-        }}
-      >
-        {days.map(date => {
-          const count = data[date]
-
-          return (
-            <div
-              key={date}
-              title={`${date} - ${count || 0} solved`}
-              style={{
-                width: '20px',
-                height: '20px',
-                borderRadius: '4px',
-                background: getColor(count)
-              }}
-            />
-          )
-        })}
-      </div>
+    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+      {days.map(date => (
+        <div
+          key={date}
+          title={`${date} - ${data[date] || 0}`}
+          style={{
+            width: '15px',
+            height: '14px',
+            borderRadius: '2px',
+            background: getColor(data[date])
+          }}
+        />
+      ))}
     </div>
   )
 }

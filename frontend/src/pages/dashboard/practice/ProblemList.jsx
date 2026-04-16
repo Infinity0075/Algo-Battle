@@ -1,10 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { problems } from './problems'
 import ProblemCard from './ProblemCard'
+import { useAuth } from '../../../context/AuthContext'
+import { getProblemStatus } from '../../../services/submissionService'
 
 function ProblemList () {
   const [search, setSearch] = useState('')
   const [difficulty, setDifficulty] = useState('All')
+
+  const [statusMap, setStatusMap] = useState({}) // 🔥 NEW
+  const { user } = useAuth() // 🔥 NEW
+
+  // 🔥 FETCH STATUS
+  useEffect(() => {
+    const fetchStatus = async () => {
+      try {
+        const token = user?.token || localStorage.getItem('token')
+
+        if (!token) {
+          console.log('No token found')
+          return
+        }
+
+        const data = await getProblemStatus(token)
+
+        console.log('STATUS MAP:', data) // 🔥 DEBUG
+
+        setStatusMap(data)
+      } catch (err) {
+        console.error('Status fetch error:', err)
+      }
+    }
+
+    fetchStatus()
+  }, [user])
 
   const filteredProblems = problems.filter(problem => {
     const matchesSearch = problem.title
@@ -61,7 +90,11 @@ function ProblemList () {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {filteredProblems.length > 0 ? (
           filteredProblems.map(problem => (
-            <ProblemCard key={problem.id} problem={problem} />
+            <ProblemCard
+              key={problem.id}
+              problem={problem}
+              status={statusMap[problem.id]} // 🔥 PASS STATUS
+            />
           ))
         ) : (
           <p>No problems found</p>

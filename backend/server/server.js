@@ -7,6 +7,8 @@ const { protect } = require("./middleware/authMiddleware");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 
+const submissionRoutes = require("./routes/submissionRoutes");
+
 const app = express();
 
 // Connect DB
@@ -17,6 +19,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+
+app.use("/api/submissions", submissionRoutes);
 
 // Test route
 app.get("/", (req, res) => {
