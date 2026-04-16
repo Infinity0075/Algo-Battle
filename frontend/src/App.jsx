@@ -5,7 +5,6 @@ import './App.css'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
-import Editor from './pages/Editor'
 
 // Auth
 import ProtectedRoute from './components/ProtectedRoute'
@@ -18,21 +17,23 @@ import Overview from './pages/dashboard/Overview'
 import Profile from './pages/dashboard/Profile'
 import Battle from './pages/dashboard/Battle'
 import Leaderboard from './pages/dashboard/Leaderboard'
-
-// Practice (folder-based page)
 import Practice from './pages/dashboard/practice'
 import ProblemDetail from './pages/dashboard/practice/ProblemDetail'
+
+// Admin
+import AddProblem from './pages/admin/AddProblem'
+import ManageProblems from './pages/admin/ManageProblems'
 
 function App () {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public Routes */}
+        {/* 🔓 Public Routes */}
         <Route path='/' element={<Home />} />
         <Route path='/login' element={<Login />} />
         <Route path='/register' element={<Register />} />
 
-        {/* Protected Dashboard Routes */}
+        {/* 🔐 Protected Dashboard */}
         <Route
           path='/dashboard'
           element={
@@ -41,23 +42,25 @@ function App () {
             </ProtectedRoute>
           }
         >
-          <Route
-            path='/dashboard/practice/:problemId'
-            element={<ProblemDetail />}
-          />{' '}
+          {/* Dashboard Home */}
           <Route index element={<Overview />} />
-          <Route path='practice' element={<Practice />} />
-          <Route path='battle' element={<Battle />} />
-          <Route path='/dashboard/leaderboard' element={<Leaderboard />} />
-          <Route path='/dashboard/profile' element={<Profile />} />
-          <Route
-            path='/dashboard/profile/:username'
-            element={<Profile />}
-          />{' '}
-        </Route>
 
-        {/* Editor Route */}
-        {/* <Route path='/editor/:roomId' element={<Editor />} /> */}
+          {/* Practice */}
+          <Route path='practice' element={<Practice />} />
+          <Route path='practice/:problemId' element={<ProblemDetail />} />
+
+          {/* Other Pages */}
+          <Route path='battle' element={<Battle />} />
+          <Route path='leaderboard' element={<Leaderboard />} />
+
+          {/* Profile */}
+          <Route path='profile' element={<Profile />} />
+          <Route path='profile/:username' element={<Profile />} />
+
+          {/* 🔥 ADMIN ROUTE (PROTECTED INSIDE DASHBOARD) */}
+          <Route path='admin/add-problem' element={<AddProblem />} />
+          <Route path='admin/manage-problems' element={<ManageProblems />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   )

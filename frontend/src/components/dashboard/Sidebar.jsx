@@ -1,8 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 function Sidebar () {
   const location = useLocation()
+  const { user } = useAuth()
 
+  // 🔹 Base menu
   const menu = [
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Practice', path: '/dashboard/practice' },
@@ -11,20 +14,26 @@ function Sidebar () {
     { name: 'Profile', path: '/dashboard/profile' }
   ]
 
-  return (
-    <div
-      style={{
-        width: '220px',
-        background: '#111',
-        color: '#fff',
-        padding: '20px'
-      }}
-    >
-      <h2>AlgoBattle</h2>
+  // 🔥 Add admin menu ONLY if admin
+  if (user?.role === 'admin') {
+    menu.push({
+      name: 'Add Problem',
+      path: '/dashboard/admin/add-problem'
+    })
 
-      <div style={{ marginTop: '20px' }}>
+    menu.push({
+      name: 'Manage Problems',
+      path: '/dashboard/admin/manage-problems'
+    })
+  }
+  return (
+    <div className='w-56 bg-black text-white p-5 flex flex-col'>
+      {/* Logo */}
+      <h2 className='text-xl font-bold mb-8 tracking-wide'>AlgoBattle</h2>
+
+      {/* Menu */}
+      <div className='flex flex-col gap-1'>
         {menu.map(item => {
-          // 🔥 FIX: handle dynamic routes (profile/:username)
           const isActive =
             location.pathname === item.path ||
             location.pathname.startsWith(item.path + '/')
@@ -33,21 +42,20 @@ function Sidebar () {
             <Link
               key={item.path}
               to={item.path}
-              style={{
-                display: 'block',
-                padding: '10px',
-                marginBottom: '5px',
-                textDecoration: 'none',
-                color: isActive ? '#000' : '#fff',
-                background: isActive ? '#fff' : 'transparent',
-                borderRadius: '6px'
-              }}
+              className={`px-3 py-2 rounded-lg text-sm transition ${
+                isActive
+                  ? 'bg-white text-black font-medium'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`}
             >
               {item.name}
             </Link>
           )
         })}
       </div>
+
+      {/* Footer (optional polish) */}
+      <div className='mt-auto pt-6 text-xs text-gray-500'>v1.0 AlgoBattle</div>
     </div>
   )
 }

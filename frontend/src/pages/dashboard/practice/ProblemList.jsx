@@ -1,34 +1,45 @@
 import { useState, useEffect } from 'react'
-import { problems } from './problems'
 import ProblemCard from './ProblemCard'
 import { useAuth } from '../../../context/AuthContext'
 import { getProblemStatus } from '../../../services/submissionService'
+import { getProblems } from '../../../services/problemService'
 
 function ProblemList () {
   const [search, setSearch] = useState('')
   const [difficulty, setDifficulty] = useState('All')
+  const [problems, setProblems] = useState([])
+  const [statusMap, setStatusMap] = useState({})
+  const [loading, setLoading] = useState(true)
 
-  const [statusMap, setStatusMap] = useState({}) // 🔥 NEW
-  const { user } = useAuth() // 🔥 NEW
+  const { user } = useAuth()
 
-  // 🔥 FETCH STATUS
+  // 🔥 Fetch Problems
+  useEffect(() => {
+    const fetchProblems = async () => {
+      try {
+        const data = await getProblems()
+        setProblems(data)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProblems()
+  }, [])
+
+  // 🔥 Fetch Status
   useEffect(() => {
     const fetchStatus = async () => {
       try {
         const token = user?.token || localStorage.getItem('token')
-
-        if (!token) {
-          console.log('No token found')
-          return
-        }
+        if (!token) return
 
         const data = await getProblemStatus(token)
-
-        console.log('STATUS MAP:', data) // 🔥 DEBUG
-
         setStatusMap(data)
       } catch (err) {
-        console.error('Status fetch error:', err)
+        console.error(err)
       }
     }
 
@@ -46,40 +57,30 @@ function ProblemList () {
     return matchesSearch && matchesDifficulty
   })
 
+  if (loading) return <div className='p-6'>Loading problems...</div>
+
   return (
-    <div>
+    <div className='space-y-4'>
       {/* Search */}
       <input
         type='text'
         placeholder='Search problems...'
         value={search}
         onChange={e => setSearch(e.target.value)}
-        style={{
-          padding: '10px',
-          width: '100%',
-          marginBottom: '15px',
-          borderRadius: '8px',
-          border: '1px solid #ddd',
-          fontSize: '14px'
-        }}
+        className='w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black'
       />
 
       {/* Filters */}
-      <div style={{ marginBottom: '15px' }}>
+      <div className='flex gap-2'>
         {['All', 'Easy', 'Medium', 'Hard'].map(level => (
           <button
             key={level}
             onClick={() => setDifficulty(level)}
-            style={{
-              marginRight: '10px',
-              padding: '6px 12px',
-              borderRadius: '20px',
-              border: '1px solid #ccc',
-              backgroundColor: difficulty === level ? '#333' : '#f5f5f5',
-              color: difficulty === level ? '#fff' : '#333',
-              cursor: 'pointer',
-              fontSize: '13px'
-            }}
+            className={`px-4 py-1.5 rounded-full text-sm border transition ${
+              difficulty === level
+                ? 'bg-black text-white'
+                : 'bg-gray-100 hover:bg-gray-200'
+            }`}
           >
             {level}
           </button>
@@ -87,17 +88,17 @@ function ProblemList () {
       </div>
 
       {/* List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div className='flex flex-col gap-2'>
         {filteredProblems.length > 0 ? (
           filteredProblems.map(problem => (
             <ProblemCard
-              key={problem.id}
+              key={problem._id}
               problem={problem}
-              status={statusMap[problem.id]} // 🔥 PASS STATUS
+              status={statusMap[problem._id]}
             />
           ))
         ) : (
-          <p>No problems found</p>
+          <p className='text-gray-500'>No problems found</p>
         )}
       </div>
     </div>

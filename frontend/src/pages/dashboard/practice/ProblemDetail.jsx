@@ -1,134 +1,136 @@
 import { useParams } from 'react-router-dom'
-import { problems } from './problems'
-import { useState } from 'react'
-import axios from 'axios'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../../context/AuthContext'
+import { getProblem } from '../../../services/problemService'
+import axios from 'axios'
 
 function ProblemDetail () {
   const { problemId } = useParams()
   const { user } = useAuth()
 
-  const problem = problems.find(
-    p => p.id.toLowerCase() === problemId?.toLowerCase()
-  )
-
-  const [code, setCode] = useState(problem?.starterCode?.javascript || '')
+  const [problem, setProblem] = useState(null)
+  const [code, setCode] = useState('')
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
 
-  if (!problem) return <h2>Problem not found</h2>
+  useEffect(() => {
+    const fetchProblem = async () => {
+      try {
+        const data = await getProblem(problemId)
+        setProblem(data)
+        setCode(data?.starterCode?.javascript || '')
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    fetchProblem()
+  }, [problemId])
+
+  if (!problem) return <div className='p-6'>Loading...</div>
 
   return (
-    <div style={{ padding: '20px', maxWidth: '900px' }}>
-      <h1>{problem.title}</h1>
+    <div className='p-6 max-w-4xl mx-auto space-y-6'>
+      <h1 className='text-2xl font-bold'>{problem.title}</h1>
 
       <p>
-        <strong>Difficulty:</strong>{' '}
+        <span className='font-semibold'>Difficulty:</span>{' '}
         <span
-          style={{
-            color:
-              problem.difficulty === 'Easy'
-                ? 'green'
-                : problem.difficulty === 'Medium'
-                ? 'orange'
-                : 'red'
-          }}
+          className={`font-medium ${
+            problem.difficulty === 'Easy'
+              ? 'text-green-600'
+              : problem.difficulty === 'Medium'
+              ? 'text-yellow-600'
+              : 'text-red-600'
+          }`}
         >
           {problem.difficulty}
         </span>
       </p>
 
-      <p>{problem.description}</p>
+      <p className='text-gray-700'>{problem.description}</p>
 
-      <h3>Examples:</h3>
-      {problem.examples.map((ex, i) => (
-        <div key={i}>
-          <p>
-            <b>Input:</b> {ex.input}
-          </p>
-          <p>
-            <b>Output:</b> {ex.output}
-          </p>
-        </div>
-      ))}
-
-      <hr />
-
-      <h2>Code Editor</h2>
-
-      <textarea
-        value={code}
-        onChange={e => setCode(e.target.value)}
-        rows={10}
-        style={{
-          width: '100%',
-          padding: '10px',
-          fontFamily: 'monospace'
-        }}
-      />
-
-      <div style={{ marginTop: '10px' }}>
-        <button
-          onClick={() => {
-            setResult('Running...')
-            setTimeout(() => {
-              setResult('Output: [1,2]')
-            }, 1000)
-          }}
-        >
-          Run
-        </button>
-
-        <button
-          onClick={async () => {
-            try {
-              setLoading(true)
-              setResult('Submitting...')
-
-              const token = user?.token || localStorage.getItem('token')
-
-              console.log('TOKEN:', token)
-
-              if (!token) {
-                setResult('❌ Not logged in')
-                return
-              }
-
-              const res = await axios.post(
-                'http://localhost:5005/api/submissions',
-                {
-                  problemId: problem.id,
-                  status: 'solved',
-                  language: 'javascript'
-                },
-                {
-                  headers: {
-                    Authorization: `Bearer ${token}`
-                  }
-                }
-              )
-
-              console.log('RESPONSE:', res.data)
-
-              setResult('✅ Submitted Successfully!')
-            } catch (err) {
-              console.log('SUBMIT ERROR:', err.response?.data || err)
-              setResult('❌ Submission Failed')
-            } finally {
-              setLoading(false)
-            }
-          }}
-          style={{ marginLeft: '10px' }}
-        >
-          Submit
-        </button>
+      {/* Examples */}
+      <div>
+        <h3 className='font-semibold mb-2'>Examples:</h3>
+        {problem.examples.map((ex, i) => (
+          <div key={i} className='bg-gray-100 p-3 rounded mb-2'>
+            <p>
+              <strong>Input:</strong> {ex.input}
+            </p>
+            <p>
+              <strong>Output:</strong> {ex.output}
+            </p>
+          </div>
+        ))}
       </div>
 
-      {result && (
-        <div style={{ marginTop: '15px' }}>
-          <strong>{result}</strong>
+      {/* Code Editor */}
+      <div>
+        <h2 className='font-semibold mb-2'>Code Editor</h2>
+
+        <textarea
+          value={code}
+          onChange={e => setCode(e.target.value)}
+          rows={10}
+          className='w-full p-3 border rounded font-mono focus:outline-none'
+        />
+
+        <div className='flex gap-3 mt-3'>
+          <button
+            onClick={() => {
+              setResult('Running...')
+              setTimeout(() => {
+                setResult('Output: [1,2]')
+              }, 1000)
+            }}
+            className='px-4 py-2 bg-gray-200 rounded hover:bg-gray-300'
+          >
+            Run
+          </button>
+
+          <button
+            onClick={async () => {
+              try {
+                setLoading(true)
+                setResult('Submitting...')
+
+                const token = user?.token || localStorage.getItem('token')
+
+                if (!token) {
+                  setResult('Not logged in')
+                  return
+                }
+
+                await axios.post(
+                  'http://localhost:5005/api/submissions',
+                  {
+                    problemId: problem._id,
+                    status: 'solved',
+                    language: 'javascript'
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
+                  }
+                )
+
+                setResult('Submitted successfully')
+              } catch (err) {
+                setResult('Submission failed')
+              } finally {
+                setLoading(false)
+              }
+            }}
+            className='px-4 py-2 bg-black text-white rounded hover:bg-gray-800'
+          >
+            Submit
+          </button>
         </div>
-      )}
+
+        {result && <div className='mt-3 text-sm font-medium'>{result}</div>}
+      </div>
     </div>
   )
 }

@@ -1,37 +1,37 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5005/api/auth";
+const API = axios.create({
+  baseURL: "http://localhost:5005/api",
+});
 
-// Register user
-export const register = async (userData) => {
-  const response = await axios.post(`${API_URL}/register`, userData);
-  return response.data;
+// 🔐 Attach token automatically
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// REGISTER
+export const register = async (data) => {
+  const res = await API.post("/auth/register", data);
+  return res.data;
 };
 
-// Login user
-export const login = async (userData) => {
-  const response = await axios.post(`${API_URL}/login`, userData);
+// LOGIN
+export const login = async (data) => {
+  const res = await API.post("/auth/login", data);
 
-  if (response.data.token) {
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data));
+  if (res.data.token) {
+    localStorage.setItem("token", res.data.token);
   }
 
-  return response.data;
+  return res.data;
 };
 
-// Get Me is going to be the area where user can find details about themself in future ill add this route into dashboard
-
+// GET CURRENT USER
 export const getMe = async () => {
-  const token = localStorage.getItem("token");
-
-  const config = {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  };
-
-  const response = await axios.get(`${API_URL}/me`, config);
-
-  return response.data;
+  const res = await API.get("/auth/me");
+  return res.data;
 };

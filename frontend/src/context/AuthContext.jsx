@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
       try {
         const token = localStorage.getItem('token')
 
-        // 🔥 if no token → just stop loading
         if (!token) {
           setUser(null)
           setLoading(false)
@@ -21,13 +20,8 @@ export const AuthProvider = ({ children }) => {
 
         const data = await getMe()
 
-        // 🔥 attach token manually (VERY IMPORTANT)
-        setUser({
-          ...data,
-          token
-        })
-      } catch (error) {
-        console.error(error)
+        setUser({ ...data, token })
+      } catch (err) {
         setUser(null)
       } finally {
         setLoading(false)
@@ -37,7 +31,6 @@ export const AuthProvider = ({ children }) => {
     fetchUser()
   }, [])
 
-  // ✅ LOGOUT FUNCTION
   const logout = () => {
     localStorage.removeItem('token')
     setUser(null)

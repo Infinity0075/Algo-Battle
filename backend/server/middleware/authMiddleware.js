@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+// 🔐 PROTECT ROUTE
 const protect = async (req, res, next) => {
   let token;
 
@@ -9,17 +10,25 @@ const protect = async (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ message: "Not authorized" });
+    return res.status(401).json({ message: "Not authorized, no token" });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = await User.findById(decoded.id).select("-password");
+    // 🔥 attach full user (including role)
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user;
 
     next();
   } catch (error) {
-    res.status(401).json({ message: "Token failed" });
+    console.error("Auth error:", error.message);
+    res.status(401).json({ message: "Token invalid or expired" });
   }
 };
 

@@ -9,6 +9,7 @@ const authRoutes = require("./routes/authRoutes");
 
 const submissionRoutes = require("./routes/submissionRoutes");
 const userRoutes = require("./routes/userRoutes");
+const problemRoutes = require("./routes/problemRoutes");
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.use("/api/auth", authRoutes);
 
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/problems", problemRoutes);
+
 // Test route
 app.get("/", (req, res) => {
   res.send("API running...");

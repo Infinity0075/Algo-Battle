@@ -2,30 +2,21 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 function Topbar () {
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const { logout } = useAuth()
-  const { user } = useAuth()
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '15px',
-        borderBottom: '1px solid #eee'
-      }}
-    >
-      <h3>Welcome, {user?.username}</h3>
+    <div className='h-14 bg-white border-b flex items-center justify-between px-6'>
+      <h3 className='font-semibold text-lg'>
+        Welcome, {user?.username || 'User'}
+      </h3>
+
       <button
         onClick={() => {
-          logout() // ✅ clear user + token
-          navigate('/login') // ✅ redirect
+          logout()
+          navigate('/login')
         }}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer'
-        }}
+        className='px-4 py-1.5 bg-black text-white rounded-lg text-sm hover:bg-gray-800'
       >
         Logout
       </button>
