@@ -17,12 +17,15 @@ const getProblemById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // ✅ check valid ObjectId
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid problem ID" });
-    }
+    let problem;
 
-    const problem = await Problem.findById(id);
+    // ✅ if valid Mongo ID → use _id
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      problem = await Problem.findById(id);
+    } else {
+      // ✅ else treat as slug
+      problem = await Problem.findOne({ slug: id });
+    }
 
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
@@ -48,13 +51,18 @@ const createProblem = async (req, res) => {
       category,
     } = req.body;
 
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
     // ✅ validation
     if (!title || !difficulty || !description) {
       return res.status(400).json({ message: "Missing required fields" });
     }
-
     const problem = await Problem.create({
       title,
+      slug,
       difficulty,
       description,
       examples,

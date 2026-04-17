@@ -20,8 +20,15 @@ export const AuthProvider = ({ children }) => {
 
         const data = await getMe()
 
-        setUser({ ...data, token })
+        // ✅ ensure required fields exist
+        setUser({
+          _id: data._id,
+          username: data.username,
+          role: data.role || 'user',
+          token
+        })
       } catch (err) {
+        console.error('Auth error:', err)
         setUser(null)
       } finally {
         setLoading(false)

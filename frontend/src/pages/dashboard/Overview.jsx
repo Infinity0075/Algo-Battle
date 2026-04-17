@@ -87,7 +87,7 @@ function Overview () {
               <div
                 key={item._id}
                 onClick={() =>
-                  navigate(`/dashboard/practice/${item.problemId}`)
+                  navigate(`/dashboard/practice/${item.problem.slug}`)
                 }
                 style={{
                   padding: '10px',
@@ -97,8 +97,7 @@ function Overview () {
                   cursor: 'pointer'
                 }}
               >
-                <span>{item.problemId}</span>
-
+                <span>{item.problem?.title}</span>
                 <span
                   style={{
                     color: item.status === 'solved' ? 'green' : 'orange',

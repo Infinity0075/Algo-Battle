@@ -24,44 +24,53 @@ import ProblemDetail from './pages/dashboard/practice/ProblemDetail'
 import AddProblem from './pages/admin/AddProblem'
 import ManageProblems from './pages/admin/ManageProblems'
 
+// 🔥 Battle System
+import { BattleProvider } from './battle/context/BattleContext'
+import BattlePage from './battle/pages/BattlePage'
+
 function App () {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* 🔓 Public Routes */}
-        <Route path='/' element={<Home />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/register' element={<Register />} />
+      {/* 🔥 Wrap ONLY battle-related routes */}
+      <BattleProvider>
+        <Routes>
+          {/* 🔓 Public Routes */}
+          <Route path='/' element={<Home />} />
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Register />} />
 
-        {/* 🔐 Protected Dashboard */}
-        <Route
-          path='/dashboard'
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-          {/* Dashboard Home */}
-          <Route index element={<Overview />} />
+          {/* 🔐 Dashboard */}
+          <Route
+            path='/dashboard'
+            element={
+              <ProtectedRoute>
+                <DashboardLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Overview />} />
 
-          {/* Practice */}
-          <Route path='practice' element={<Practice />} />
-          <Route path='practice/:problemId' element={<ProblemDetail />} />
+            {/* Practice */}
+            <Route path='practice' element={<Practice />} />
+            <Route path='practice/:problemId' element={<ProblemDetail />} />
 
-          {/* Other Pages */}
-          <Route path='battle' element={<Battle />} />
-          <Route path='leaderboard' element={<Leaderboard />} />
+            {/* Entry Battle Page */}
+            <Route path='battle' element={<Battle />} />
 
-          {/* Profile */}
-          <Route path='profile' element={<Profile />} />
-          <Route path='profile/:username' element={<Profile />} />
+            {/* Other */}
+            <Route path='leaderboard' element={<Leaderboard />} />
+            <Route path='profile' element={<Profile />} />
+            <Route path='profile/:username' element={<Profile />} />
 
-          {/* 🔥 ADMIN ROUTE (PROTECTED INSIDE DASHBOARD) */}
-          <Route path='admin/add-problem' element={<AddProblem />} />
-          <Route path='admin/manage-problems' element={<ManageProblems />} />
-        </Route>
-      </Routes>
+            {/* Admin */}
+            <Route path='admin/add-problem' element={<AddProblem />} />
+            <Route path='admin/manage-problems' element={<ManageProblems />} />
+          </Route>
+
+          {/* 🔥 ACTUAL BATTLE ROOM */}
+          <Route path='/battle/:id' element={<BattlePage />} />
+        </Routes>
+      </BattleProvider>
     </BrowserRouter>
   )
 }

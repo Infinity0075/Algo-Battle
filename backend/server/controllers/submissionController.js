@@ -17,25 +17,26 @@ const createSubmission = async (req, res) => {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    // ✅ check if already solved
+    // ✅ FIX: ensure consistent status naming
+    const finalStatus = status === "Accepted" ? "solved" : "attempted";
+
     const alreadySolved = await Submission.findOne({
       user: userId,
       problem: problemId,
       status: "solved",
     });
 
-    // ✅ create submission anyway (for history)
     const submission = await Submission.create({
       user: userId,
       problem: problemId,
-      status: status || "attempted",
+      status: finalStatus,
       language: language || "javascript",
     });
 
     const user = await User.findById(userId);
 
-    // 🔥 ONLY update rating if solving FIRST TIME
-    if (status === "solved" && !alreadySolved) {
+    // ✅ rating update only first solve
+    if (finalStatus === "solved" && !alreadySolved) {
       if (problem.difficulty === "Easy") user.rating += 10;
       else if (problem.difficulty === "Medium") user.rating += 20;
       else if (problem.difficulty === "Hard") user.rating += 30;
@@ -55,7 +56,7 @@ const createSubmission = async (req, res) => {
   }
 };
 
-// ➤ STATS
+// ➤ STATS (FIXED LOGIC)
 const getStats = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -85,8 +86,8 @@ const getStats = async (req, res) => {
     });
 
     res.json({
-      totalSolved: solvedSet.size,
-      totalSubmissions: submissions.length,
+      totalSolved: solvedSet.size, // ✅ correct
+      totalSubmissions: submissions.length, // ✅ correct
       easy,
       medium,
       hard,
@@ -96,7 +97,7 @@ const getStats = async (req, res) => {
   }
 };
 
-// ➤ ACTIVITY
+// ➤ ACTIVITY (FIXED FORMAT)
 const getActivity = async (req, res) => {
   try {
     const submissions = await Submission.find({
@@ -117,7 +118,7 @@ const getActivity = async (req, res) => {
   }
 };
 
-// ➤ RECENT
+// ➤ RECENT (IMPORTANT FIX)
 const getRecent = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user._id })
@@ -125,13 +126,25 @@ const getRecent = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(5);
 
-    res.json(submissions);
+    // ✅ FIX: map clean data for frontend
+    const formatted = submissions.map((s) => ({
+      _id: s._id,
+      status: s.status,
+      createdAt: s.createdAt,
+      problem: {
+        _id: s.problem?._id,
+        title: s.problem?.title,
+        slug: s.problem?.slug, // 🔥 IMPORTANT
+      },
+    }));
+
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ message: "Error fetching recent" });
   }
 };
 
-// ➤ STREAK
+// ➤ STREAK (UNCHANGED)
 const getStreak = async (req, res) => {
   try {
     const submissions = await Submission.find({
@@ -163,7 +176,7 @@ const getStreak = async (req, res) => {
   }
 };
 
-// ➤ PROBLEM STATUS
+// ➤ PROBLEM STATUS (UNCHANGED)
 const getProblemStatus = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user._id });

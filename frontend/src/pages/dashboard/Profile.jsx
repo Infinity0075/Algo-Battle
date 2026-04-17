@@ -86,7 +86,7 @@ function Profile () {
                 }}
               >
                 <span>
-                  {item.problemId} {item.status === 'solved' ? '✅' : '⏳'}
+                  {item.problem?.title} {item.status === 'solved' ? '✅' : '⏳'}
                 </span>
               </div>
             ))

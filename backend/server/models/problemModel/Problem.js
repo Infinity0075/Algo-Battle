@@ -28,6 +28,10 @@ const problemSchema = new mongoose.Schema(
       javascript: String,
       cpp: String,
     },
+    slug: {
+      type: String,
+      unique: true,
+    },
   },
   { timestamps: true },
 );
