@@ -47,7 +47,7 @@ const getLeaderboard = async (req, res) => {
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({
-      username: req.params.username,
+      username: { $regex: `^${req.params.username}$`, $options: "i" },
     });
 
     if (!user) {

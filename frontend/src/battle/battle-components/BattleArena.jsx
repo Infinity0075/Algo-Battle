@@ -6,6 +6,7 @@ import { getSocket, sendCodeChange, sendSubmit } from '../services/socket'
 export default function BattleArena ({ startTime, leaderboard }) {
   const [code, setCode] = useState('// Start coding...')
   const [submissions, setSubmissions] = useState([])
+  const problemId = problem?._id
 
   useEffect(() => {
     const socket = getSocket()
@@ -29,8 +30,18 @@ export default function BattleArena ({ startTime, leaderboard }) {
     sendCodeChange(val)
   }
 
-  const handleSubmit = () => {
-    sendSubmit(code)
+  const handleSubmit = async () => {
+    const res = await sendSubmit(code, problemId)
+
+    if (res) {
+      setSubmissions(prev => [
+        ...prev,
+        {
+          username,
+          status: res.submission.status
+        }
+      ])
+    }
   }
 
   return (

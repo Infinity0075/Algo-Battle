@@ -22,9 +22,10 @@ export default function BattlePage () {
       setIsHost(socket.id === room.host)
     })
 
-    socket.on('battle_started', ({ startTime }) => {
+    socket.on('battle_started', ({ startTime, problem }) => {
       setStarted(true)
       setStartTime(startTime)
+      setProblem(problem) // ✅ ADD THIS
     })
 
     socket.on('leaderboard_update', data => {
@@ -39,7 +40,11 @@ export default function BattlePage () {
       {!started ? (
         <RoomLobby players={players} isHost={isHost} />
       ) : (
-        <BattleArena startTime={startTime} leaderboard={leaderboard} />
+        <BattleArena
+          startTime={startTime}
+          leaderboard={leaderboard}
+          problem={problem} // ✅ ADD
+        />
       )}
     </div>
   )

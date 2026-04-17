@@ -89,15 +89,22 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("room_data", rooms[roomId]);
   });
 
-  socket.on("start_battle", () => {
+  socket.on("start_battle", async () => {
     const room = rooms[socket.roomId];
     if (!room || socket.id !== room.host) return;
 
-    room.started = true;
+    // 🔥 pick random problem from DB
+    const problems = await Problem.find();
+    const random = problems[Math.floor(Math.random() * problems.length)];
+
+    room.problemId = random._id; // ✅ IMPORTANT
+    room.problem = random; // (optional full data)
+
     room.startTime = Date.now();
 
     io.to(socket.roomId).emit("battle_started", {
       startTime: room.startTime,
+      problem: random, // ✅ send to frontend
     });
   });
 
@@ -105,23 +112,32 @@ io.on("connection", (socket) => {
     socket.to(socket.roomId).emit("code_update", code);
   });
 
-  socket.on("submit_code", ({ code }) => {
-    const room = rooms[socket.roomId];
-    if (!room) return;
+  socket.on("submit_code", async ({ code }) => {
+    try {
+      const res = await axios.post(
+        "http://localhost:5005/api/submissions",
+        {
+          problemId: room.problemId, // make sure this exists
+          code,
+          status: "Accepted", // temporary (real judge later)
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${socket.token}`,
+          },
+        },
+      );
 
-    const result = {
-      username: socket.username,
-      status: Math.random() > 0.5 ? "Accepted" : "Wrong Answer",
-      time: Date.now() - room.startTime,
-    };
+      const result = {
+        username: socket.username,
+        status: res.data.submission.status,
+        time: Date.now() - room.startTime,
+      };
 
-    if (result.status === "Accepted") {
-      room.leaderboard.push(result);
-      room.leaderboard.sort((a, b) => a.time - b.time);
+      io.to(socket.roomId).emit("submission_result", result);
+    } catch (err) {
+      console.error(err);
     }
-
-    io.to(socket.roomId).emit("leaderboard_update", room.leaderboard);
-    io.to(socket.roomId).emit("submission_result", result);
   });
 
   socket.on("disconnect", () => {

@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import axios from "axios";
 
 let socket;
 
@@ -18,8 +19,26 @@ export const sendCodeChange = (code) => {
   }
 };
 
-export const sendSubmit = (code) => {
-  if (socket) {
-    socket.emit("submit_code", { code });
+export const sendSubmit = async (code, problemId) => {
+  const token = localStorage.getItem("token");
+
+  try {
+    const res = await axios.post(
+      "http://localhost:5005/api/submissions",
+      {
+        problemId,
+        code, // (we’ll use later for judge)
+        status: "Accepted", // 🔥 temporary (replace later)
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error(err);
   }
 };

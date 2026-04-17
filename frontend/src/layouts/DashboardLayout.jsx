@@ -4,36 +4,21 @@ import { Outlet } from 'react-router-dom'
 
 function DashboardLayout () {
   return (
-    <div
-      style={{
-        display: 'flex',
-        height: '100vh',
-        background: '#f5f5f5'
-      }}
-    >
-      {/* Sidebar */}
-      <Sidebar />
+    <div className='flex h-screen bg-[#111111] text-white'>
+      {/* SIDEBAR */}
+      <div className='w-64 border-r border-[#2A2A2A] bg-[#1A1A1A]'>
+        <Sidebar />
+      </div>
 
-      {/* Right Side */}
-      <div
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
-        {/* Topbar */}
-        <Topbar />
+      {/* RIGHT SIDE */}
+      <div className='flex-1 flex flex-col'>
+        {/* TOPBAR */}
+        <div className='h-16 border-b border-[#2A2A2A] bg-[#111111] flex items-center px-6'>
+          <Topbar />
+        </div>
 
-        {/* Main Content */}
-        <div
-          style={{
-            flex: 1,
-            overflowY: 'auto',
-            padding: '20px'
-          }}
-        >
-          {/* 🔥 THIS IS THE MOST IMPORTANT LINE */}
+        {/* MAIN CONTENT */}
+        <div className='flex-1 overflow-y-auto px-6 py-6 bg-[#111111]'>
           <Outlet />
         </div>
       </div>

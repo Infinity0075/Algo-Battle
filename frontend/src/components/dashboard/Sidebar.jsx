@@ -5,7 +5,6 @@ function Sidebar () {
   const location = useLocation()
   const { user } = useAuth()
 
-  // 🔹 Base menu
   const menu = [
     { name: 'Dashboard', path: '/dashboard' },
     { name: 'Practice', path: '/dashboard/practice' },
@@ -14,24 +13,22 @@ function Sidebar () {
     { name: 'Profile', path: '/dashboard/profile' }
   ]
 
-  // 🔥 Add admin menu ONLY if admin
   if (user?.role === 'admin') {
-    menu.push({
-      name: 'Add Problem',
-      path: '/dashboard/admin/add-problem'
-    })
-
+    menu.push({ name: 'Add Problem', path: '/dashboard/admin/add-problem' })
     menu.push({
       name: 'Manage Problems',
       path: '/dashboard/admin/manage-problems'
     })
   }
-  return (
-    <div className='w-56 bg-black text-white p-5 flex flex-col'>
-      {/* Logo */}
-      <h2 className='text-xl font-bold mb-8 tracking-wide'>AlgoBattle</h2>
 
-      {/* Menu */}
+  return (
+    <div className='h-full flex flex-col bg-[#1A1A1A] text-white px-5 py-6'>
+      {/* LOGO */}
+      <h2 className='text-lg font-semibold tracking-wide text-amber-500 mb-10'>
+        AlgoBattle
+      </h2>
+
+      {/* MENU */}
       <div className='flex flex-col gap-1'>
         {menu.map(item => {
           const isActive =
@@ -42,10 +39,10 @@ function Sidebar () {
             <Link
               key={item.path}
               to={item.path}
-              className={`px-3 py-2 rounded-lg text-sm transition ${
+              className={`px-4 py-2 rounded-md text-sm transition flex items-center ${
                 isActive
-                  ? 'bg-white text-black font-medium'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+                  ? 'bg-[#2A2A2A] text-amber-500 font-medium'
+                  : 'text-gray-400 hover:bg-[#222222] hover:text-white'
               }`}
             >
               {item.name}
@@ -54,8 +51,10 @@ function Sidebar () {
         })}
       </div>
 
-      {/* Footer (optional polish) */}
-      <div className='mt-auto pt-6 text-xs text-gray-500'>v1.0 AlgoBattle</div>
+      {/* FOOTER */}
+      <div className='mt-auto pt-6 border-t border-[#2A2A2A] text-xs text-gray-500'>
+        v1.0 AlgoBattle
+      </div>
     </div>
   )
 }
