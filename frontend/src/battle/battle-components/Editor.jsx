@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getProblem } from '../services/problemService'
+import { getProblem } from '../../services/problemService'
 
 const Editor = () => {
   const { id } = useParams()
