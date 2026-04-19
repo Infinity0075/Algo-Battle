@@ -1,4 +1,4 @@
-import API from "../../shared/utils/axios"; // 🔧 USE GLOBAL INSTANCE
+import API from "../../../shared/utils/axios";
 
 // ✅ GET ALL PROBLEMS
 export const getProblems = async () => {

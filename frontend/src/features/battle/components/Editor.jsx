@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import MonacoEditor from '@monaco-editor/react'
-import { createSubmission } from '../../submissions/services/submissionService'
+import { createSubmission } from '../../submission/services/submissionService'
 
 const DEFAULT_CODE = {
   javascript: '// Write JavaScript code here',

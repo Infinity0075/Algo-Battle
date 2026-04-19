@@ -10,7 +10,8 @@ const diffConfig = {
 }
 
 function ProblemDetail () {
-  const { problemId } = useParams() // 🔧 FIXED param usage
+  const { problemId } = useParams()
+  const id = problemId // 🔧 FIXED param usage
 
   const [problem, setProblem] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -18,10 +19,13 @@ function ProblemDetail () {
   useEffect(() => {
     const fetchProblem = async () => {
       try {
-        const res = await getProblemById(problemId)
-        setProblem(res.data || res) // 🔧 axios safe
+        const data = await getProblemById(problemId)
+
+        console.log('Fetched:', data) // ✅ now valid
+
+        setProblem(data)
       } catch (err) {
-        console.error('Problem fetch error:', err.message)
+        console.error('Problem fetch error:', err.response?.data || err.message)
       } finally {
         setLoading(false)
       }

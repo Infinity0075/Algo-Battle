@@ -25,10 +25,14 @@ const getProblemById = async (req, res) => {
 
     let problem;
 
+    // 🔥 FIRST: try ObjectId
     if (mongoose.Types.ObjectId.isValid(id)) {
-      problem = await Problem.findById(id).select("-__v").lean();
-    } else {
-      problem = await Problem.findOne({ slug: id }).select("-__v").lean();
+      problem = await Problem.findById(id);
+    }
+
+    // 🔥 SECOND: try slug (IMPORTANT)
+    if (!problem) {
+      problem = await Problem.findOne({ slug: id });
     }
 
     if (!problem) {
@@ -37,7 +41,7 @@ const getProblemById = async (req, res) => {
 
     res.status(200).json(problem);
   } catch (err) {
-    console.error("GET SINGLE ERROR:", err.message);
+    console.error("GET SINGLE ERROR:", err);
     res.status(500).json({ message: "Error fetching problem" });
   }
 };

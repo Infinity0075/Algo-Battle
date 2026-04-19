@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../auth/context/AuthContext' // 🔧 FIX PATH
-import ActivityHeatmap from '../../shared/components/ActivityHeatmap' // 🔧 FIX PATH
+import { useAuth } from '../../../features/auth/context/AuthContext' // 🔧 FIX PATH
+import ActivityHeatmap from '../../../shared/components/ActivityHeatmap' // 🔧 FIX PATH
 
 import {
   getStats,
   getActivity,
   getRecent,
   getStreak
-} from '../submissions/services/submissionService' // 🔧 FIX PATH + no token
+} from '../../submission/services/submissionService' // 🔧 FIX PATH + no token
 
 function Overview () {
   const navigate = useNavigate()

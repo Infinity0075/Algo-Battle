@@ -1,5 +1,5 @@
 import { BrowserRouter } from 'react-router-dom'
-import './App.css'
+import '../style/app.css'
 
 import AppRoutes from './routes'
 import { BattleProvider } from '../features/battle/context/BattleContext'

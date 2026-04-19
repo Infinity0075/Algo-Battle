@@ -23,8 +23,7 @@ const validateId = (req, res, next) => {
 
 // 🔓 PUBLIC ROUTES
 router.get("/", getProblems);
-router.get("/:id", validateId, getProblemById); // 🔧 added validation
-
+router.get("/:id", getProblemById);
 // 🔐 ADMIN ROUTES
 router.post("/", protect, adminOnly, createProblem);
 router.put("/:id", protect, adminOnly, validateId, updateProblem); // 🔧 added validation

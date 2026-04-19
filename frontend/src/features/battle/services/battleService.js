@@ -1,4 +1,4 @@
-import API from "../../shared/utils/axios";
+import API from "../../../shared/utils/axios";
 
 // 🔥 CREATE ROOM (optional future use)
 export const createRoom = async () => {

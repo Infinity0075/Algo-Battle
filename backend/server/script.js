@@ -1,5 +1,3 @@
-// 🔥 IMPROVED: production-ready, safer sockets, better structure
-
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
@@ -12,19 +10,23 @@ const submissionRoutes = require("./routes/submissionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const problemRoutes = require("./routes/problemRoutes");
 const Problem = require("./models/Problem");
+const judgeRoutes = require("./routes/judgeRoutes");
 
 const app = express();
 
 // 🔧 DB
 connectDB();
 
-// 🔧 Middleware
+// 🔥 FIXED CORS (IMPORTANT)
+const FRONTEND_URL = "http://localhost:5173";
+
 app.use(
   cors({
-    origin: "*", // 🔧 CHANGE in prod → specific domain
+    origin: FRONTEND_URL,
     credentials: true,
   }),
 );
+
 app.use(express.json());
 
 // 🔧 Health check
@@ -35,26 +37,28 @@ app.use("/api/auth", authRoutes);
 app.use("/api/submissions", submissionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/problems", problemRoutes);
+app.use("/api/judge", judgeRoutes);
 
 // 🔧 HTTP + SOCKET SERVER
 const server = http.createServer(app);
 
+// 🔥 FIX SOCKET CORS ALSO
 const io = new Server(server, {
   cors: {
-    origin: "*", // 🔧 CHANGE in prod
+    origin: FRONTEND_URL,
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
-// 🔧 In-memory store (⚠️ replace with Redis in real prod)
+// 🔧 In-memory store
 const rooms = new Map();
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // 🔥 JOIN ROOM
   socket.on("join_room", ({ roomId, username }) => {
-    if (!roomId || !username) return; // 🔧 validation
+    if (!roomId || !username) return;
 
     socket.join(roomId);
     socket.roomId = roomId;
@@ -71,7 +75,6 @@ io.on("connection", (socket) => {
 
     const room = rooms.get(roomId);
 
-    // 🔧 prevent duplicate joins
     if (!room.users.find((u) => u.id === socket.id)) {
       room.users.push({ id: socket.id, username });
     }
@@ -79,14 +82,13 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("room_data", room);
   });
 
-  // 🔥 START BATTLE
   socket.on("start_battle", async () => {
     try {
       const room = rooms.get(socket.roomId);
       if (!room || socket.id !== room.host) return;
 
       const count = await Problem.countDocuments();
-      if (count === 0) return; // 🔧 safety
+      if (count === 0) return;
 
       const randomIndex = Math.floor(Math.random() * count);
       const random = await Problem.findOne().skip(randomIndex);
@@ -101,36 +103,31 @@ io.on("connection", (socket) => {
         problem: random,
       });
     } catch (err) {
-      console.error("start_battle error:", err.message); // 🔧 logging
+      console.error("start_battle error:", err.message);
     }
   });
 
-  // 🔥 CODE SYNC
   socket.on("code_change", ({ code }) => {
     if (!socket.roomId) return;
     socket.to(socket.roomId).emit("code_update", code);
   });
 
-  // 🔥 SUBMIT
-  socket.on("submit_code", ({ code }) => {
+  socket.on("submit_code", () => {
     const room = rooms.get(socket.roomId);
     if (!room || !room.started) return;
 
     const result = {
       username: socket.username,
-      status: "Accepted", // 🔧 later replace with real judge
+      status: "Accepted",
       time: Date.now() - room.startTime,
     };
 
     room.leaderboard.push(result);
-
-    // 🔧 sort leaderboard
     room.leaderboard.sort((a, b) => a.time - b.time);
 
     io.to(socket.roomId).emit("submission_result", result);
   });
 
-  // 🔥 DISCONNECT
   socket.on("disconnect", () => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -139,12 +136,10 @@ io.on("connection", (socket) => {
 
     room.users = room.users.filter((u) => u.id !== socket.id);
 
-    // 🔧 reassign host
     if (room.host === socket.id) {
       room.host = room.users[0]?.id || null;
     }
 
-    // 🔧 cleanup empty room
     if (room.users.length === 0) {
       rooms.delete(roomId);
       return;
@@ -154,7 +149,6 @@ io.on("connection", (socket) => {
   });
 });
 
-// 🔧 GLOBAL ERROR HANDLER (basic)
 process.on("unhandledRejection", (err) => {
   console.error("Unhandled Rejection:", err.message);
 });

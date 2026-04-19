@@ -3,7 +3,7 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-const Problem = require("./models/problemModel/Problem");
+const Problem = require("../server/models/Problem");
 const connectDB = require("./config/db");
 
 const generateSlug = (title) =>

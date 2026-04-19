@@ -2,14 +2,14 @@ import { Routes, Route } from 'react-router-dom'
 
 // Public
 import Home from '../public/Home'
-import Login from '../pages/Login'
-import Register from '../pages/Register'
+import Login from '../features/auth/page/Login'
+import Register from '../features/auth/page/Register'
 
 // Auth
 import ProtectedRoute from '../shared/components/ProtectedRoute'
 
-// Layout
-import DashboardLayout from '../layouts/DashboardLayout'
+// Layout (🔥 FIXED)
+import DashboardLayout from '../shared/layouts/DashboardLayout'
 
 // User
 import Overview from '../features/user/pages/Overview'
@@ -17,8 +17,8 @@ import Profile from '../features/user/pages/Profile'
 import Leaderboard from '../features/user/pages/Leaderboard'
 
 // Problems
-import Problems from '../features/problems/pages/Problems'
-import ProblemDetail from '../features/problems/pages/ProblemDetail'
+import Problems from '../features/problem/pages/Problems'
+import ProblemDetail from '../features/problem/pages/ProblemDetail'
 
 // Battle
 import BattleHome from '../features/battle/pages/BattleHome'
@@ -51,7 +51,7 @@ export default function AppRoutes () {
         <Route path='practice' element={<Problems />} />
         <Route path='practice/:problemId' element={<ProblemDetail />} />
 
-        {/* Battle entry */}
+        {/* Battle */}
         <Route path='battle' element={<BattleHome />} />
 
         {/* Others */}
@@ -64,7 +64,7 @@ export default function AppRoutes () {
         <Route path='admin/manage-problems' element={<ManageProblems />} />
       </Route>
 
-      {/* 🔥 Battle Room */}
+      {/* 🔥 Battle Room (OUTSIDE DASHBOARD) */}
       <Route path='/battle/:id' element={<BattlePage />} />
     </Routes>
   )

@@ -1,6 +1,6 @@
 // 🔥 USE GLOBAL AXIOS (no manual token passing)
 
-import API from "../../shared/utils/axios";
+import API from "../../../shared/utils/axios";
 
 // ➤ STATS
 export const getStats = async () => {

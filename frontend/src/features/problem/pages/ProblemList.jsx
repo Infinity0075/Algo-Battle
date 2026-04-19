@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react'
 import ProblemCard from '../components/ProblemCard'
 import { getProblems } from '../services/problemService'
-import { getProblemStatus } from '../../submissions/services/submissionService' // 🔧 ADD
+import { getProblemStatus } from '../../submission/services/submissionService'
 
 function ProblemList () {
   const [problems, setProblems] = useState([])
-  const [statusMap, setStatusMap] = useState({}) // 🔧 ADD
+  const [statusMap, setStatusMap] = useState({})
   const [filter, setFilter] = useState('All')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const [problemsRes, statusRes] = await Promise.all([
+        const [problemsData, statusData] = await Promise.all([
           getProblems(),
-          getProblemStatus() // 🔥 get solved/attempted
+          getProblemStatus()
         ])
 
-        setProblems(problemsRes.data || problemsRes)
-        setStatusMap(statusRes || {}) // 🔧 store status
+        // 🔥 FIX: both already return data (no .data needed)
+        setProblems(problemsData || [])
+        setStatusMap(statusData || {})
       } catch (err) {
         console.error('Fetch error:', err.message)
       } finally {
@@ -70,7 +71,7 @@ function ProblemList () {
               <ProblemCard
                 key={problem._id}
                 problem={problem}
-                status={statusMap[problem._id]} // 🔥 PASS STATUS
+                status={statusMap?.[problem._id]} // 🔥 SAFE ACCESS
               />
             ))
           )}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../auth/context/AuthContext.jsx'
 import { useNavigate } from 'react-router-dom'
 import { createProblem } from '../../problem/services/problemService'
 
