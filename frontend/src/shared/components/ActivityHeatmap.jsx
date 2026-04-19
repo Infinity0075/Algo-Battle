@@ -25,7 +25,7 @@ function ActivityHeatmap ({ data }) {
           <div key={date} className='relative group'>
             {/* BOX */}
             <div
-              className='w-[14px] h-[14px] rounded-sm'
+              className='w-3.5 h-3.5 rounded-sm'
               style={{ background: getColor(count) }}
             />
 
