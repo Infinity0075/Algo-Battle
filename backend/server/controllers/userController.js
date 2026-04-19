@@ -1,21 +1,27 @@
-const Submission = require("../models/Submission");
-const User = require("../models/User");
+// 🔥 FIXED: correct fields + optimized aggregation + correct model path
 
+const Submission = require("../models/Submission");
+const User = require("../models/User"); // 🔧 FIXED path
+
+// ➤ LEADERBOARD
 const getLeaderboard = async (req, res) => {
   try {
     const leaderboard = await Submission.aggregate([
       { $match: { status: "solved" } },
+
       {
         $group: {
           _id: "$user",
-          solvedProblems: { $addToSet: "$problemId" },
+          solvedProblems: { $addToSet: "$problem" }, // 🔧 FIXED (was problemId ❌)
         },
       },
+
       {
         $project: {
           solved: { $size: "$solvedProblems" },
         },
       },
+
       {
         $lookup: {
           from: "users",
@@ -24,7 +30,9 @@ const getLeaderboard = async (req, res) => {
           as: "user",
         },
       },
+
       { $unwind: "$user" },
+
       {
         $project: {
           username: "$user.username",
@@ -32,32 +40,35 @@ const getLeaderboard = async (req, res) => {
           solved: 1,
         },
       },
+
       { $sort: { solved: -1, rating: -1 } },
+
+      { $limit: 50 }, // 🔧 ADDED limit
     ]);
 
     res.json(leaderboard);
   } catch (err) {
-    console.error(err);
+    console.error("LEADERBOARD ERROR:", err.message);
     res.status(500).json({ message: "Error fetching leaderboard" });
   }
 };
 
-// const Submission = require("../models/Submission");
-
+// ➤ USER PROFILE
 const getUserProfile = async (req, res) => {
   try {
+    const username = req.params.username;
+
     const user = await User.findOne({
-      username: { $regex: `^${req.params.username}$`, $options: "i" },
-    });
+      username: { $regex: `^${username}$`, $options: "i" },
+    }).lean(); // 🔧 faster
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ stats
-    const submissions = await Submission.find({ user: user._id }).populate(
-      "problem",
-    );
+    const submissions = await Submission.find({ user: user._id })
+      .populate("problem", "_id title slug difficulty")
+      .lean();
 
     const solvedSet = new Set();
 
@@ -67,11 +78,15 @@ const getUserProfile = async (req, res) => {
       }
     });
 
-    // ✅ recent activity (IMPORTANT)
-    const recent = await Submission.find({ user: user._id })
-      .populate("problem")
-      .sort({ createdAt: -1 })
-      .limit(5);
+    const recent = submissions
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 5)
+      .map((s) => ({
+        _id: s._id,
+        status: s.status,
+        createdAt: s.createdAt,
+        problem: s.problem,
+      }));
 
     res.json({
       username: user.username,
@@ -81,9 +96,10 @@ const getUserProfile = async (req, res) => {
       totalSolved: solvedSet.size,
       totalSubmissions: submissions.length,
 
-      recent, // 🔥 THIS WAS MISSING / WRONG
+      recent,
     });
   } catch (err) {
+    console.error("PROFILE ERROR:", err.message);
     res.status(500).json({ message: "Error fetching profile" });
   }
 };

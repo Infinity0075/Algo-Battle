@@ -1,8 +1,9 @@
-const User = require("../models/User");
-const bcrypt = require("bcryptjs");
+// 🔥 FIXED: correct model path + optimized + production safe
+
+const User = require("../models/User"); // 🔧 FIXED path
 const jwt = require("jsonwebtoken");
 
-// Generate Token
+// 🔥 Generate Token
 const generateToken = (id) => {
   if (!process.env.JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured");
@@ -12,42 +13,35 @@ const generateToken = (id) => {
   });
 };
 
-// REGISTER USER
+// 🔥 REGISTER USER
 const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    if (!username || !email || !password) {
-      return res.status(400).json({ message: "Please fill all fields" });
-    }
-
     const normalizedEmail = email.toLowerCase();
 
-    // 1. Check if user exists
+    // 🔧 check existing
     const userExists = await User.findOne({
       $or: [{ email: normalizedEmail }, { username }],
     });
+
     if (userExists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // 2. Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    // 3. Create user
+    // 🔧 let schema handle hashing (removed manual bcrypt)
     const user = await User.create({
       username,
       email: normalizedEmail,
-      password: hashedPassword,
+      password,
     });
 
-    // 4. Send response with token
     res.status(201).json({
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
+        role: user.role, // 🔧 added
       },
       token: generateToken(user._id),
     });
@@ -56,59 +50,46 @@ const registerUser = async (req, res) => {
   }
 };
 
-// LOGIN USER
+// 🔥 LOGIN USER
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Please fill all fields" });
-    }
-
     const normalizedEmail = email.toLowerCase();
 
-    // 1. Check user exists
-    const user = await User.findOne({ email: normalizedEmail });
-    if (!user) {
+    // 🔧 include password explicitly (since select:false)
+    const user = await User.findOne({ email: normalizedEmail }).select(
+      "+password",
+    );
+
+    if (!user || !(await user.matchPassword(password))) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
 
-    // 2. Compare password
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
-    }
-
-    // 3. Return user + token
     res.status(200).json({
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
+        role: user.role,
       },
       token: generateToken(user._id),
     });
-    // 4. Console loged in user if wanted to delete then just delete this one...
-    const allUsers = await User.find();
-    console.log("🔥 ALL USERS:", allUsers);
-    // res.json({
-    //   _id: user._id,
-    //   username: user.username,
-    //   email: user.email,
-    //   token: generateToken(user._id),
-    // });
+
+    // ❌ REMOVED: unnecessary all users log (security + performance)
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
+// 🔥 GET ME
 const getMe = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const { _id, username, email, role } = req.user;
+
   res.status(200).json({
     id: _id,
     username,

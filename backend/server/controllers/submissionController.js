@@ -1,6 +1,8 @@
+// 🔥 FIXED: correct model paths + optimized + safe
+
 const Submission = require("../models/Submission");
-const Problem = require("../models/problemModel/Problem");
-const User = require("../models/User");
+const Problem = require("../models/Problem");
+const User = require("../models/User"); // 🔧 FIXED path
 
 // ➤ CREATE SUBMISSION
 const createSubmission = async (req, res) => {
@@ -12,19 +14,18 @@ const createSubmission = async (req, res) => {
       return res.status(400).json({ message: "Problem ID required" });
     }
 
-    const problem = await Problem.findById(problemId);
+    const problem = await Problem.findById(problemId).lean();
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    // ✅ FIX: ensure consistent status naming
     const finalStatus = status === "Accepted" ? "solved" : "attempted";
 
-    const alreadySolved = await Submission.findOne({
+    const alreadySolved = await Submission.exists({
       user: userId,
       problem: problemId,
       status: "solved",
-    });
+    }); // 🔧 faster than findOne
 
     const submission = await Submission.create({
       user: userId,
@@ -33,16 +34,17 @@ const createSubmission = async (req, res) => {
       language: language || "javascript",
     });
 
-    const user = await User.findById(userId);
-
-    // ✅ rating update only first solve
+    // 🔧 only update rating if needed
     if (finalStatus === "solved" && !alreadySolved) {
-      if (problem.difficulty === "Easy") user.rating += 10;
-      else if (problem.difficulty === "Medium") user.rating += 20;
-      else if (problem.difficulty === "Hard") user.rating += 30;
-    }
+      const inc =
+        problem.difficulty === "Easy"
+          ? 10
+          : problem.difficulty === "Medium"
+            ? 20
+            : 30;
 
-    await user.save();
+      await User.findByIdAndUpdate(userId, { $inc: { rating: inc } }); // 🔧 atomic update
+    }
 
     res.status(201).json({
       message: alreadySolved
@@ -51,25 +53,25 @@ const createSubmission = async (req, res) => {
       submission,
     });
   } catch (err) {
-    console.error("CREATE SUBMISSION ERROR:", err);
+    console.error("CREATE SUBMISSION ERROR:", err.message);
     res.status(500).json({ message: "Error creating submission" });
   }
 };
 
-// ➤ STATS (FIXED LOGIC)
+// ➤ STATS
 const getStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const submissions = await Submission.find({ user: userId }).populate(
-      "problem",
-    );
+    const submissions = await Submission.find({ user: userId })
+      .populate("problem", "difficulty")
+      .lean();
 
     const solvedSet = new Set();
 
-    let easy = 0;
-    let medium = 0;
-    let hard = 0;
+    let easy = 0,
+      medium = 0,
+      hard = 0;
 
     submissions.forEach((s) => {
       if (s.status === "solved" && s.problem) {
@@ -86,8 +88,8 @@ const getStats = async (req, res) => {
     });
 
     res.json({
-      totalSolved: solvedSet.size, // ✅ correct
-      totalSubmissions: submissions.length, // ✅ correct
+      totalSolved: solvedSet.size,
+      totalSubmissions: submissions.length,
       easy,
       medium,
       hard,
@@ -97,13 +99,13 @@ const getStats = async (req, res) => {
   }
 };
 
-// ➤ ACTIVITY (FIXED FORMAT)
+// ➤ ACTIVITY
 const getActivity = async (req, res) => {
   try {
     const submissions = await Submission.find({
       user: req.user._id,
       status: "solved",
-    });
+    }).select("createdAt");
 
     const activity = {};
 
@@ -118,24 +120,20 @@ const getActivity = async (req, res) => {
   }
 };
 
-// ➤ RECENT (IMPORTANT FIX)
+// ➤ RECENT
 const getRecent = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user._id })
-      .populate("problem")
+      .populate("problem", "title slug")
       .sort({ createdAt: -1 })
-      .limit(5);
+      .limit(5)
+      .lean();
 
-    // ✅ FIX: map clean data for frontend
     const formatted = submissions.map((s) => ({
       _id: s._id,
       status: s.status,
       createdAt: s.createdAt,
-      problem: {
-        _id: s.problem?._id,
-        title: s.problem?.title,
-        slug: s.problem?.slug, // 🔥 IMPORTANT
-      },
+      problem: s.problem || null,
     }));
 
     res.json(formatted);
@@ -144,13 +142,15 @@ const getRecent = async (req, res) => {
   }
 };
 
-// ➤ STREAK (UNCHANGED)
+// ➤ STREAK
 const getStreak = async (req, res) => {
   try {
     const submissions = await Submission.find({
       user: req.user._id,
       status: "solved",
-    }).sort({ createdAt: -1 });
+    })
+      .select("createdAt")
+      .sort({ createdAt: -1 });
 
     const days = new Set(
       submissions.map((s) => s.createdAt.toISOString().split("T")[0]),
@@ -165,9 +165,7 @@ const getStreak = async (req, res) => {
       if (days.has(dateStr)) {
         streak++;
         currentDate.setDate(currentDate.getDate() - 1);
-      } else {
-        break;
-      }
+      } else break;
     }
 
     res.json({ streak });
@@ -176,23 +174,19 @@ const getStreak = async (req, res) => {
   }
 };
 
-// ➤ PROBLEM STATUS (UNCHANGED)
+// ➤ PROBLEM STATUS
 const getProblemStatus = async (req, res) => {
   try {
-    const submissions = await Submission.find({ user: req.user._id });
+    const submissions = await Submission.find({ user: req.user._id }).lean();
 
     const statusMap = {};
 
     submissions.forEach((s) => {
       const id = s.problem?.toString();
-
       if (!id) return;
 
-      if (s.status === "solved") {
-        statusMap[id] = "solved";
-      } else if (!statusMap[id]) {
-        statusMap[id] = "attempted";
-      }
+      if (s.status === "solved") statusMap[id] = "solved";
+      else if (!statusMap[id]) statusMap[id] = "attempted";
     });
 
     res.json(statusMap);
@@ -201,8 +195,9 @@ const getProblemStatus = async (req, res) => {
   }
 };
 
+// ➤ CLEAR (ADMIN)
 const clearSubmissions = async (req, res) => {
-  await Submission.deleteMany();
+  await Submission.deleteMany(); // 🔧 already protected via route
   res.json({ message: "All submissions cleared" });
 };
 

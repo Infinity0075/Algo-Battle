@@ -1,13 +1,19 @@
+// 🔥 OPTIMIZED + production-safe
+
 const mongoose = require("mongoose");
-const Problem = require("../models/problemModel/Problem");
+const Problem = require("../models/Problem");
 
 // 🔥 GET ALL PROBLEMS
 const getProblems = async (req, res) => {
   try {
-    const problems = await Problem.find().sort({ createdAt: -1 });
+    const problems = await Problem.find()
+      .select("-__v") // 🔧 cleaner response
+      .sort({ createdAt: -1 })
+      .lean(); // 🔧 faster
+
     res.status(200).json(problems);
   } catch (err) {
-    console.error("GET PROBLEMS ERROR:", err);
+    console.error("GET PROBLEMS ERROR:", err.message);
     res.status(500).json({ message: "Error fetching problems" });
   }
 };
@@ -19,12 +25,10 @@ const getProblemById = async (req, res) => {
 
     let problem;
 
-    // ✅ if valid Mongo ID → use _id
     if (mongoose.Types.ObjectId.isValid(id)) {
-      problem = await Problem.findById(id);
+      problem = await Problem.findById(id).select("-__v").lean();
     } else {
-      // ✅ else treat as slug
-      problem = await Problem.findOne({ slug: id });
+      problem = await Problem.findOne({ slug: id }).select("-__v").lean();
     }
 
     if (!problem) {
@@ -33,12 +37,12 @@ const getProblemById = async (req, res) => {
 
     res.status(200).json(problem);
   } catch (err) {
-    console.error("GET SINGLE ERROR:", err);
+    console.error("GET SINGLE ERROR:", err.message);
     res.status(500).json({ message: "Error fetching problem" });
   }
 };
 
-// 🔥 CREATE PROBLEM (ADMIN ONLY)
+// 🔥 CREATE PROBLEM
 const createProblem = async (req, res) => {
   try {
     const {
@@ -51,15 +55,23 @@ const createProblem = async (req, res) => {
       category,
     } = req.body;
 
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-
-    // ✅ validation
     if (!title || !difficulty || !description) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
+    // 🔧 slug generation
+    const slug = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+    // 🔧 prevent duplicate slug
+    const exists = await Problem.findOne({ slug });
+    if (exists) {
+      return res.status(400).json({ message: "Problem already exists" });
+    }
+
     const problem = await Problem.create({
       title,
       slug,
@@ -73,12 +85,12 @@ const createProblem = async (req, res) => {
 
     res.status(201).json(problem);
   } catch (err) {
-    console.error("CREATE ERROR:", err);
+    console.error("CREATE ERROR:", err.message);
     res.status(500).json({ message: "Error creating problem" });
   }
 };
 
-// 🔥 UPDATE PROBLEM (ADMIN ONLY)
+// 🔥 UPDATE PROBLEM
 const updateProblem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -87,10 +99,19 @@ const updateProblem = async (req, res) => {
       return res.status(400).json({ message: "Invalid problem ID" });
     }
 
+    // 🔧 if title updated → update slug too
+    if (req.body.title) {
+      req.body.slug = req.body.title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+    }
+
     const updated = await Problem.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
-    });
+    }).select("-__v");
 
     if (!updated) {
       return res.status(404).json({ message: "Problem not found" });
@@ -98,12 +119,12 @@ const updateProblem = async (req, res) => {
 
     res.status(200).json(updated);
   } catch (err) {
-    console.error("UPDATE ERROR:", err);
+    console.error("UPDATE ERROR:", err.message);
     res.status(500).json({ message: "Error updating problem" });
   }
 };
 
-// 🔥 DELETE PROBLEM (ADMIN ONLY)
+// 🔥 DELETE PROBLEM
 const deleteProblem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -112,17 +133,15 @@ const deleteProblem = async (req, res) => {
       return res.status(400).json({ message: "Invalid problem ID" });
     }
 
-    const problem = await Problem.findById(id);
+    const deleted = await Problem.findByIdAndDelete(id); // 🔧 simplified
 
-    if (!problem) {
+    if (!deleted) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
-    await problem.deleteOne();
-
     res.status(200).json({ message: "Problem deleted successfully" });
   } catch (err) {
-    console.error("DELETE ERROR:", err);
+    console.error("DELETE ERROR:", err.message);
     res.status(500).json({ message: "Error deleting problem" });
   }
 };

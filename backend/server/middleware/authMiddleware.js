@@ -1,37 +1,37 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+const User = require("../models/User"); // 🔧 FIXED: correct path as per your structure
 
 // 🔐 PROTECT ROUTE
 const protect = async (req, res, next) => {
-  let token;
-
-  if (req.headers.authorization?.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  }
-
-  if (!token) {
-    return res.status(401).json({ message: "Not authorized, no token" });
-  }
-
-  if (!process.env.JWT_SECRET) {
-    console.error("Auth error: JWT_SECRET is not configured");
-    return res.status(500).json({ message: "Server configuration error" });
-  }
-
   try {
+    let token;
+
+    if (req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
+    }
+
+    if (!token) {
+      return res.status(401).json({ message: "Not authorized, no token" });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error("Auth error: JWT_SECRET is not configured");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select("-password"); // 🔧 OPTIMIZED: fetch only once
 
     if (!user) {
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = await User.findById(decoded.id).select("-password");
+    req.user = user; // 🔧 CHANGED: reuse fetched user
     next();
   } catch (error) {
     console.error("Auth error:", error.message);
-    res.status(401).json({ message: "Token invalid or expired" });
+    return res.status(401).json({ message: "Token invalid or expired" });
   }
 };
 

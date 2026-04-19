@@ -1,15 +1,17 @@
+// 🔥 IMPROVED: avoids duplicate slug crash
+
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 const Problem = require("./models/problemModel/Problem");
 const connectDB = require("./config/db");
 
-const generateSlug = (title) => {
-  return title
+const generateSlug = (title) =>
+  title
     .toLowerCase()
+    .trim()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
-};
 
 const addSlugs = async () => {
   try {
@@ -19,8 +21,18 @@ const addSlugs = async () => {
 
     for (let problem of problems) {
       if (!problem.slug) {
-        problem.slug = generateSlug(problem.title);
+        let baseSlug = generateSlug(problem.title);
+        let slug = baseSlug;
+        let count = 1;
+
+        // 🔧 ensure unique slug
+        while (await Problem.findOne({ slug })) {
+          slug = `${baseSlug}-${count++}`;
+        }
+
+        problem.slug = slug;
         await problem.save();
+
         console.log(`✅ Updated: ${problem.title}`);
       }
     }

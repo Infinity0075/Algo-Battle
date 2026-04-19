@@ -10,15 +10,20 @@ const {
 } = require("../controllers/submissionController");
 
 const { protect } = require("../middleware/authMiddleware");
+const { adminOnly } = require("../middleware/adminMiddleware"); // 🔧 ADDED
 
 const router = express.Router();
 
+// 🔥 ROUTES
 router.post("/", protect, createSubmission);
+
 router.get("/stats", protect, getStats);
 router.get("/activity", protect, getActivity);
 router.get("/recent", protect, getRecent);
 router.get("/streak", protect, getStreak);
 router.get("/status", protect, getProblemStatus);
-router.delete("/clear", clearSubmissions);
+
+// 🔧 FIX: dangerous route → admin only
+router.delete("/clear", protect, adminOnly, clearSubmissions);
 
 module.exports = router;
