@@ -1,23 +1,5 @@
 import { useNavigate } from 'react-router-dom'
 
-const diffColors = {
-  Easy: {
-    text: '#10b981',
-    bg: 'rgba(16,185,129,0.1)',
-    border: 'rgba(16,185,129,0.25)'
-  },
-  Medium: {
-    text: '#f59e0b',
-    bg: 'rgba(245,158,11,0.1)',
-    border: 'rgba(245,158,11,0.25)'
-  },
-  Hard: {
-    text: '#ef4444',
-    bg: 'rgba(239,68,68,0.1)',
-    border: 'rgba(239,68,68,0.25)'
-  }
-}
-
 function ProblemCard ({ problem, status }) {
   const navigate = useNavigate()
 
@@ -26,96 +8,51 @@ function ProblemCard ({ problem, status }) {
     return null
   }
 
-  const diff = diffColors[problem.difficulty] || {
-    text: '#64748b',
-    bg: 'transparent',
-    border: '#1a1a2e'
+  const difficultyStyles = {
+    Easy: 'text-green-400 bg-green-500/10 border-green-500/20',
+    Medium: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20',
+    Hard: 'text-red-400 bg-red-500/10 border-red-500/20'
   }
 
   const statusIcon =
     status === 'solved' ? '✓' : status === 'attempted' ? '◑' : null
-  const statusColor = status === 'solved' ? '#10b981' : '#f59e0b'
+
+  const statusStyles =
+    status === 'solved'
+      ? 'bg-green-500/10 text-green-400'
+      : 'bg-yellow-500/10 text-yellow-400'
 
   return (
     <div
-      onClick={() => {
-        console.log('CLICKED:', problem._id)
-        navigate(`/dashboard/practice/${problem._id}`)
-      }}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        border: '1px solid #1a1a2e',
-        padding: '14px 18px',
-        borderRadius: 12,
-        cursor: 'pointer',
-        background: '#0f0f1a',
-        transition: 'all 0.18s ease',
-        fontFamily: 'DM Sans, sans-serif'
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = '#141425'
-        e.currentTarget.style.borderColor = '#2a2a40'
-        e.currentTarget.style.transform = 'translateX(3px)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = '#0f0f1a'
-        e.currentTarget.style.borderColor = '#1a1a2e'
-        e.currentTarget.style.transform = 'translateX(0)'
-      }}
+      onClick={() => navigate(`/dashboard/practice/${problem._id}`)}
+      className='flex justify-between items-center px-4 py-3 rounded-xl cursor-pointer 
+                 bg-[#0f0f1a] border border-[#1a1a2e]
+                 hover:bg-[#151528] hover:border-[#2a2a40]
+                 transition-all duration-200 hover:translate-x-1'
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {statusIcon && (
+      {/* LEFT */}
+      <div className='flex items-center gap-3'>
+        {/* STATUS ICON */}
+        {statusIcon ? (
           <span
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              background:
-                status === 'solved'
-                  ? 'rgba(16,185,129,0.12)'
-                  : 'rgba(245,158,11,0.12)',
-              color: statusColor,
-              fontSize: 11,
-              fontWeight: 700,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
+            className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${statusStyles}`}
           >
             {statusIcon}
           </span>
+        ) : (
+          <span className='w-5 h-5 rounded-full border border-[#1a1a2e]' />
         )}
-        {!statusIcon && (
-          <span
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: '50%',
-              border: '1px solid #1a1a2e',
-              flexShrink: 0
-            }}
-          />
-        )}
-        <span style={{ color: '#e2e8f0', fontSize: 14, fontWeight: 500 }}>
+
+        {/* TITLE */}
+        <span className='text-sm font-medium text-gray-200'>
           {problem.title}
         </span>
       </div>
 
+      {/* DIFFICULTY */}
       <span
-        style={{
-          color: diff.text,
-          backgroundColor: diff.bg,
-          border: `1px solid ${diff.border}`,
-          padding: '3px 10px',
-          borderRadius: 20,
-          fontSize: 11,
-          fontWeight: 600,
-          fontFamily: 'JetBrains Mono, monospace',
-          whiteSpace: 'nowrap'
-        }}
+        className={`text-[11px] font-semibold px-3 py-1 rounded-full border whitespace-nowrap
+        ${difficultyStyles[problem.difficulty]}`}
       >
         {problem.difficulty}
       </span>

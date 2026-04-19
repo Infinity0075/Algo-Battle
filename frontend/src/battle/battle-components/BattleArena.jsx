@@ -3,9 +3,15 @@ import Editor from './Editor'
 import Timer from './Timer'
 import { getSocket, sendCodeChange, sendSubmit } from '../services/socket'
 
-export default function BattleArena ({ startTime, leaderboard }) {
+export default function BattleArena ({
+  startTime,
+  leaderboard = [],
+  problem,
+  username
+}) {
   const [code, setCode] = useState('// Start coding...')
   const [submissions, setSubmissions] = useState([])
+
   const problemId = problem?._id
 
   useEffect(() => {
@@ -31,6 +37,8 @@ export default function BattleArena ({ startTime, leaderboard }) {
   }
 
   const handleSubmit = async () => {
+    if (!problemId) return
+
     const res = await sendSubmit(code, problemId)
 
     if (res) {
@@ -43,33 +51,82 @@ export default function BattleArena ({ startTime, leaderboard }) {
       ])
     }
   }
+  if (!problem) {
+    return <div className='text-white p-6'>Loading problem...</div>
+  }
 
   return (
-    <div className='grid grid-cols-2 h-screen'>
-      <div className='p-6 bg-gray-800'>
-        <h2>Problem</h2>
-        <p>Reverse a string</p>
+    <div className='grid grid-cols-2 h-screen bg-[#05050a] text-white'>
+      {/* LEFT PANEL */}
+      <div className='p-6 border-r border-[#1a1a2e] overflow-y-auto'>
+        {/* Problem */}
+        <div className='mb-6'>
+          <h2 className='text-xl font-bold mb-2'>📘 Problem</h2>
+          <p className='text-slate-400 text-sm'>
+            {problem?.title || 'Loading...'}
+          </p>
+          <p className='text-slate-500 text-xs mt-2'>{problem?.description}</p>
+        </div>
 
-        <h3 className='mt-4'>Leaderboard</h3>
-        {leaderboard.map((p, i) => (
-          <div key={i}>
-            #{i + 1} {p.username} - {p.time}ms
+        {/* Leaderboard */}
+        <div>
+          <h3 className='text-lg font-semibold mb-3'>🏆 Leaderboard</h3>
+
+          <div className='space-y-2'>
+            {leaderboard.length === 0 && (
+              <p className='text-slate-500 text-sm'>No players yet</p>
+            )}
+
+            {leaderboard.map((p, i) => (
+              <div
+                key={i}
+                className='flex justify-between items-center bg-[#0f0f1a] border border-[#1a1a2e] px-3 py-2 rounded-lg'
+              >
+                <span className='text-sm'>
+                  #{i + 1} {p.username}
+                </span>
+                <span className='text-xs text-slate-400'>{p.time}ms</span>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+
+        {/* Submissions */}
+        <div className='mt-6'>
+          <h3 className='text-lg font-semibold mb-2'>⚡ Activity</h3>
+
+          <div className='space-y-1 text-sm max-h-40 overflow-y-auto'>
+            {submissions.map((s, i) => (
+              <div key={i} className='text-slate-400'>
+                {s.username} → {s.status}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
+      {/* RIGHT PANEL */}
       <div className='flex flex-col'>
-        <Timer startTime={startTime} />
+        {/* Top Bar */}
+        <div className='flex justify-between items-center px-4 py-2 border-b border-[#1a1a2e]'>
+          <Timer startTime={startTime} />
 
-        <Editor
-          mode='battle'
-          externalCode={code}
-          setExternalCode={handleCodeChange}
-        />
+          <button
+            onClick={handleSubmit}
+            className='px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 rounded-md text-sm font-semibold shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+          >
+            Submit ⚡
+          </button>
+        </div>
 
-        <button onClick={handleSubmit} className='bg-green-600 p-2'>
-          Submit
-        </button>
+        {/* Editor */}
+        <div className='flex-1'>
+          <Editor
+            mode='battle'
+            externalCode={code}
+            setExternalCode={handleCodeChange}
+          />
+        </div>
       </div>
     </div>
   )

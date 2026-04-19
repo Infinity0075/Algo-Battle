@@ -89,6 +89,15 @@ const loginUser = async (req, res) => {
       },
       token: generateToken(user._id),
     });
+    // 4. Console loged in user if wanted to delete then just delete this one...
+    const allUsers = await User.find();
+    console.log("🔥 ALL USERS:", allUsers);
+    // res.json({
+    //   _id: user._id,
+    //   username: user.username,
+    //   email: user.email,
+    //   token: generateToken(user._id),
+    // });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

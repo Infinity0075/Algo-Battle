@@ -4,17 +4,16 @@ require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
 
-const { protect } = require("./middleware/authMiddleware");
-
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
 const userRoutes = require("./routes/userRoutes");
 const problemRoutes = require("./routes/problemRoutes");
+const Problem = require("./models/problemModel/Problem"); // ✅ IMPORTANT
 
 const app = express();
 
-// Connect DB
+// DB
 connectDB();
 
 // Middleware
@@ -27,38 +26,12 @@ app.use("/api/submissions", submissionRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/problems", problemRoutes);
 
-// Basic route
-app.get("/", (req, res) => {
-  res.send("API running...");
-});
+app.get("/", (req, res) => res.send("API running..."));
 
-app.get("/api/protected", protect, (req, res) => {
-  res.json({
-    message: "You accessed protected route 🔐",
-    user: req.user,
-  });
-});
-
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
-});
-
-// Global error handler
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: err.message || "Server Error" });
-});
-
-const PORT = process.env.PORT || 5005;
-
-/* 🔥 SOCKET SETUP */
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-  },
+  cors: { origin: "*" },
 });
 
 let rooms = {};
@@ -66,6 +39,7 @@ let rooms = {};
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
+  // 🔥 JOIN ROOM
   socket.on("join_room", ({ roomId, username }) => {
     socket.join(roomId);
 
@@ -89,57 +63,46 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("room_data", rooms[roomId]);
   });
 
+  // 🔥 START BATTLE
   socket.on("start_battle", async () => {
     const room = rooms[socket.roomId];
     if (!room || socket.id !== room.host) return;
 
-    // 🔥 pick random problem from DB
     const problems = await Problem.find();
     const random = problems[Math.floor(Math.random() * problems.length)];
 
-    room.problemId = random._id; // ✅ IMPORTANT
-    room.problem = random; // (optional full data)
-
+    room.problem = random;
+    room.problemId = random._id;
     room.startTime = Date.now();
 
     io.to(socket.roomId).emit("battle_started", {
       startTime: room.startTime,
-      problem: random, // ✅ send to frontend
+      problem: random,
     });
   });
 
+  // 🔥 CODE SYNC
   socket.on("code_change", ({ code }) => {
     socket.to(socket.roomId).emit("code_update", code);
   });
 
-  socket.on("submit_code", async ({ code }) => {
-    try {
-      const res = await axios.post(
-        "http://localhost:5005/api/submissions",
-        {
-          problemId: room.problemId, // make sure this exists
-          code,
-          status: "Accepted", // temporary (real judge later)
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${socket.token}`,
-          },
-        },
-      );
+  // 🔥 SUBMIT
+  socket.on("submit_code", ({ code }) => {
+    const room = rooms[socket.roomId];
+    if (!room) return;
 
-      const result = {
-        username: socket.username,
-        status: res.data.submission.status,
-        time: Date.now() - room.startTime,
-      };
+    const result = {
+      username: socket.username,
+      status: "Accepted",
+      time: Date.now() - room.startTime,
+    };
 
-      io.to(socket.roomId).emit("submission_result", result);
-    } catch (err) {
-      console.error(err);
-    }
+    room.leaderboard.push(result);
+
+    io.to(socket.roomId).emit("submission_result", result);
   });
 
+  // 🔥 DISCONNECT
   socket.on("disconnect", () => {
     const roomId = socket.roomId;
     if (!roomId || !rooms[roomId]) return;
@@ -154,6 +117,5 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 5005;
+server.listen(PORT, () => console.log(`🚀 Server running on ${PORT}`));

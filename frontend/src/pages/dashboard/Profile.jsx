@@ -3,13 +3,22 @@ import { useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getUserProfile } from '../../services/userService'
 
-const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');`
+const G = `
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=JetBrains+Mono:wght@400;500&display=swap');
+  .fd { font-family: 'Playfair Display', serif !important; }
+  .fm { font-family: 'JetBrains Mono', monospace !important; }
+  body, * { font-family: 'DM Sans', sans-serif; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:translateY(0);} }
+  .a1 { animation: fadeUp .4s ease both; }
+  .a2 { animation: fadeUp .4s .08s ease both; }
+  .a3 { animation: fadeUp .4s .16s ease both; }
+  .act-row:hover { background: #1c1917; }
+`
 
 function Profile () {
   const { username } = useParams()
   const { user } = useAuth()
-
-  // auto fallback to logged-in user
   const finalUsername = (username || user?.username)?.toLowerCase()
   const [data, setData] = useState(null)
 
@@ -29,283 +38,114 @@ function Profile () {
 
   if (!finalUsername)
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          background: '#09090f'
-        }}
-      >
+      <div className='min-h-screen flex items-center justify-center bg-stone-950'>
+        <style>{G}</style>
         <div
           style={{
-            width: 34,
-            height: 34,
-            border: '2px solid #1a1a2e',
-            borderTop: '2px solid #7c3aed',
+            width: 36,
+            height: 36,
+            border: '2px solid #292524',
+            borderTopColor: '#d97706',
             borderRadius: '50%',
-            animation: 'spin 0.8s linear infinite'
+            animation: 'spin .7s linear infinite'
           }}
         />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
 
   if (!data)
     return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          background: '#09090f',
-          color: '#64748b',
-          fontFamily: 'DM Sans, sans-serif',
-          fontSize: 16
-        }}
-      >
-        <style>{FONTS}</style>
-        User not found
+      <div className='min-h-screen flex items-center justify-center bg-stone-950 text-stone-600 text-sm'>
+        <style>{G}</style>
+        User not found.
       </div>
     )
 
-  const isOwnProfile = user?.username?.toLowerCase() === finalUsername
+  const isOwn = user?.username?.toLowerCase() === finalUsername
+  const initials = data.username.slice(0, 2).toUpperCase()
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: '#09090f',
-        fontFamily: 'DM Sans, sans-serif',
-        padding: '0 0 40px'
-      }}
-    >
-      <style>{FONTS}</style>
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-        .activity-row:hover { background: #141425 !important; }
-      `}</style>
+    <div className='min-h-screen bg-stone-950 pb-12'>
+      <style>{G}</style>
 
-      {/* Profile Hero Banner */}
-      <div
-        style={{
-          background:
-            'linear-gradient(135deg, #1e0a3c 0%, #0f0f1a 60%, #09090f 100%)',
-          borderBottom: '1px solid #1a1a2e',
-          padding: '40px 24px 32px',
-          animation: 'fadeUp 0.4s ease'
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 760,
-            margin: '0 auto',
-            display: 'flex',
-            alignItems: 'flex-end',
-            gap: 20,
-            flexWrap: 'wrap'
-          }}
-        >
+      {/* Hero */}
+      <div className='a1 border-b border-stone-800/60 bg-stone-900 px-5 py-10 md:px-12'>
+        <div className='max-w-3xl mx-auto flex items-end gap-5 flex-wrap'>
           {/* Avatar */}
           <div
+            className='w-20 h-20 rounded-2xl flex items-center justify-center fd text-2xl text-stone-950 font-bold flex-shrink-0'
             style={{
-              width: 80,
-              height: 80,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 32,
-              flexShrink: 0,
-              border: '3px solid #1a1a2e',
-              boxShadow: '0 0 30px rgba(124,58,237,0.3)'
+              background: 'linear-gradient(135deg, #d97706 0%, #b45309 100%)'
             }}
           >
-            {data.username[0].toUpperCase()}
+            {initials}
           </div>
 
-          <div style={{ flex: 1 }}>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                marginBottom: 4,
-                flexWrap: 'wrap'
-              }}
-            >
-              <h1
-                style={{
-                  fontFamily: 'Syne, sans-serif',
-                  fontSize: 26,
-                  fontWeight: 800,
-                  color: '#f1f5f9',
-                  margin: 0,
-                  letterSpacing: '-0.3px'
-                }}
-              >
-                {data.username}
-              </h1>
-              {isOwnProfile && (
-                <span
-                  style={{
-                    fontSize: 10,
-                    color: '#7c3aed',
-                    background: 'rgba(124,58,237,0.12)',
-                    border: '1px solid rgba(124,58,237,0.3)',
-                    padding: '2px 8px',
-                    borderRadius: 20,
-                    fontFamily: 'JetBrains Mono, monospace'
-                  }}
-                >
-                  YOU
+          <div className='flex-1 min-w-0'>
+            <div className='flex flex-wrap items-center gap-2 mb-1'>
+              <h1 className='fd text-3xl text-stone-50'>{data.username}</h1>
+              {isOwn && (
+                <span className='fm text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/25 px-2.5 py-0.5 rounded-full uppercase tracking-wider'>
+                  You
                 </span>
               )}
             </div>
-            <p
-              style={{
-                margin: 0,
-                color: '#64748b',
-                fontSize: 13,
-                fontFamily: 'JetBrains Mono, monospace'
-              }}
-            >
-              {data.email}
-            </p>
+            <p className='fm text-xs text-stone-600'>{data.email}</p>
           </div>
 
-          {/* Rating */}
-          <div style={{ textAlign: 'right' }}>
-            <p
-              style={{
-                margin: '0 0 4px',
-                fontSize: 11,
-                color: '#64748b',
-                fontFamily: 'JetBrains Mono, monospace',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em'
-              }}
-            >
+          <div className='text-right'>
+            <p className='fm text-xs text-stone-600 uppercase tracking-wider mb-1'>
               Rating
             </p>
-            <p
-              style={{
-                margin: 0,
-                fontFamily: 'Syne, sans-serif',
-                fontSize: 24,
-                fontWeight: 800,
-                color: '#fbbf24'
-              }}
-            >
-              ⭐ {data.rating}
-            </p>
+            <p className='fd text-3xl text-amber-400'>★ {data.rating}</p>
           </div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 760, margin: '0 auto', padding: '28px 24px 0' }}>
-        {/* Stat Cards */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: 14,
-            marginBottom: 24,
-            animation: 'fadeUp 0.45s ease'
-          }}
-        >
+      <div className='max-w-3xl mx-auto px-5 md:px-12 pt-8'>
+        {/* Stat cards */}
+        <div className='a2 grid grid-cols-2 gap-4 mb-6'>
           <StatCard
-            title='Problems Solved'
+            label='Problems Solved'
             value={data.totalSolved}
-            accent='#7c3aed'
+            accent='text-amber-400'
           />
           <StatCard
-            title='Total Submissions'
+            label='Total Submissions'
             value={data.totalSubmissions}
-            accent='#06b6d4'
+            accent='text-stone-300'
           />
         </div>
 
-        {/* Recent Activity */}
-        <div
-          style={{
-            background: '#0f0f1a',
-            border: '1px solid #1a1a2e',
-            borderRadius: 16,
-            overflow: 'hidden',
-            animation: 'fadeUp 0.5s ease'
-          }}
-        >
-          <div
-            style={{ padding: '18px 20px', borderBottom: '1px solid #1a1a2e' }}
-          >
-            <h3
-              style={{
-                fontFamily: 'Syne, sans-serif',
-                fontSize: 15,
-                fontWeight: 700,
-                color: '#f1f5f9',
-                margin: 0
-              }}
-            >
-              ⏱ Recent Activity
-            </h3>
+        {/* Recent activity */}
+        <div className='a3 bg-stone-900 border border-stone-800/80 rounded-2xl overflow-hidden'>
+          <div className='flex items-center gap-4 px-6 py-4 border-b border-stone-800'>
+            <h3 className='fd text-lg text-stone-200'>Recent Activity</h3>
+            <div className='flex-1 h-px bg-stone-800' />
           </div>
 
           {data.recent.length === 0 ? (
-            <div
-              style={{
-                padding: '32px 20px',
-                textAlign: 'center',
-                color: '#64748b',
-                fontSize: 14
-              }}
-            >
-              No activity yet. Start solving problems! 💡
-            </div>
+            <p className='text-stone-600 text-sm text-center py-10'>
+              No activity yet. Start solving problems!
+            </p>
           ) : (
             data.recent.map((item, i) => (
               <div
                 key={item._id}
-                className='activity-row'
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '13px 20px',
-                  borderBottom:
-                    i < data.recent.length - 1 ? '1px solid #1a1a2e' : 'none',
-                  transition: 'background 0.15s'
-                }}
+                className='act-row flex items-center justify-between px-6 py-3.5 border-b border-stone-800/60 last:border-none transition-colors duration-150'
               >
-                <span style={{ color: '#e2e8f0', fontSize: 14 }}>
+                <span className='text-stone-300 text-sm'>
                   {item.problem?.title}
                 </span>
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontWeight: 600,
-                    color: item.status === 'solved' ? '#10b981' : '#f59e0b',
-                    background:
-                      item.status === 'solved'
-                        ? 'rgba(16,185,129,0.1)'
-                        : 'rgba(245,158,11,0.1)',
-                    border: `1px solid ${
-                      item.status === 'solved'
-                        ? 'rgba(16,185,129,0.25)'
-                        : 'rgba(245,158,11,0.25)'
-                    }`,
-                    padding: '3px 10px',
-                    borderRadius: 20
-                  }}
-                >
-                  {item.status === 'solved' ? '✓ solved' : '⏳ attempted'}
-                </span>
+                {item.status === 'solved' ? (
+                  <span className='fm text-[11px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-0.5 rounded-full'>
+                    ✓ solved
+                  </span>
+                ) : (
+                  <span className='fm text-[11px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3 py-0.5 rounded-full'>
+                    ◑ attempted
+                  </span>
+                )}
               </div>
             ))
           )}
@@ -315,53 +155,13 @@ function Profile () {
   )
 }
 
-function StatCard ({ title, value, accent }) {
+function StatCard ({ label, value, accent }) {
   return (
-    <div
-      style={{
-        background: '#0f0f1a',
-        border: '1px solid #1a1a2e',
-        borderRadius: 14,
-        padding: '20px 16px',
-        textAlign: 'center',
-        position: 'relative',
-        overflow: 'hidden'
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 2,
-          background: accent,
-          borderRadius: '14px 14px 0 0'
-        }}
-      />
-      <p
-        style={{
-          margin: '0 0 8px',
-          color: '#64748b',
-          fontSize: 11,
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          fontFamily: 'JetBrains Mono, monospace'
-        }}
-      >
-        {title}
+    <div className='bg-stone-900 border border-stone-800/80 rounded-xl p-5 text-center'>
+      <p className='fm text-[10px] text-stone-500 uppercase tracking-wider mb-2'>
+        {label}
       </p>
-      <h3
-        style={{
-          margin: 0,
-          fontFamily: 'Syne, sans-serif',
-          fontSize: 28,
-          fontWeight: 700,
-          color: '#f1f5f9'
-        }}
-      >
-        {value}
-      </h3>
+      <p className={`fd text-4xl ${accent}`}>{value}</p>
     </div>
   )
 }
