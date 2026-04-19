@@ -4,9 +4,24 @@ const BattleContext = createContext()
 
 export const BattleProvider = ({ children }) => {
   const [roomId, setRoomId] = useState('')
-  const [username, setUsername] = useState('')
+  const [username, setUsername] = useState(
+    localStorage.getItem('username') || '' // 🔧 persist
+  )
   const [players, setPlayers] = useState([])
   const [started, setStarted] = useState(false)
+
+  // 🔥 SET USERNAME (persist)
+  const handleSetUsername = name => {
+    setUsername(name)
+    localStorage.setItem('username', name) // 🔧 save
+  }
+
+  // 🔥 RESET ROOM (important on leave)
+  const resetBattle = () => {
+    setRoomId('')
+    setPlayers([])
+    setStarted(false)
+  }
 
   return (
     <BattleContext.Provider
@@ -14,11 +29,12 @@ export const BattleProvider = ({ children }) => {
         roomId,
         setRoomId,
         username,
-        setUsername,
+        setUsername: handleSetUsername, // 🔧 override setter
         players,
         setPlayers,
         started,
-        setStarted
+        setStarted,
+        resetBattle // 🔧 expose
       }}
     >
       {children}

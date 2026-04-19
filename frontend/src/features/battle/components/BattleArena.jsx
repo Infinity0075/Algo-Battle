@@ -12,15 +12,16 @@ export default function BattleArena ({
   const [code, setCode] = useState('// Start coding...')
   const [submissions, setSubmissions] = useState([])
 
-  const problemId = problem?._id
-
   useEffect(() => {
     const socket = getSocket()
+    if (!socket) return // 🔧 safety
 
+    // 🔥 CODE SYNC
     socket.on('code_update', incomingCode => {
       setCode(incomingCode)
     })
 
+    // 🔥 ACTIVITY LOG
     socket.on('submission_result', data => {
       setSubmissions(prev => [...prev, data])
     })
@@ -36,36 +37,28 @@ export default function BattleArena ({
     sendCodeChange(val)
   }
 
-  const handleSubmit = async () => {
-    if (!problemId) return
-
-    const res = await sendSubmit(code, problemId)
-
-    if (res) {
-      setSubmissions(prev => [
-        ...prev,
-        {
-          username,
-          status: res.submission.status
-        }
-      ])
-    }
+  // 🔥 FIX: no fake response handling (server emits result)
+  const handleSubmit = () => {
+    sendSubmit(code)
   }
+
   if (!problem) {
     return <div className='text-white p-6'>Loading problem...</div>
   }
 
   return (
     <div className='grid grid-cols-2 h-screen bg-[#05050a] text-white'>
-      {/* LEFT PANEL */}
+      {/* LEFT */}
       <div className='p-6 border-r border-[#1a1a2e] overflow-y-auto'>
         {/* Problem */}
         <div className='mb-6'>
           <h2 className='text-xl font-bold mb-2'>📘 Problem</h2>
-          <p className='text-slate-400 text-sm'>
-            {problem?.title || 'Loading...'}
+          <p className='text-slate-300 text-sm font-semibold'>
+            {problem.title}
           </p>
-          <p className='text-slate-500 text-xs mt-2'>{problem?.description}</p>
+          <p className='text-slate-500 text-xs mt-2 line-clamp-4'>
+            {problem.description}
+          </p>
         </div>
 
         {/* Leaderboard */}
@@ -74,7 +67,7 @@ export default function BattleArena ({
 
           <div className='space-y-2'>
             {leaderboard.length === 0 && (
-              <p className='text-slate-500 text-sm'>No players yet</p>
+              <p className='text-slate-500 text-sm'>No submissions yet</p>
             )}
 
             {leaderboard.map((p, i) => (
@@ -85,13 +78,15 @@ export default function BattleArena ({
                 <span className='text-sm'>
                   #{i + 1} {p.username}
                 </span>
-                <span className='text-xs text-slate-400'>{p.time}ms</span>
+                <span className='text-xs text-emerald-400'>
+                  {(p.time / 1000).toFixed(2)}s {/* 🔧 better UX */}
+                </span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Submissions */}
+        {/* Activity */}
         <div className='mt-6'>
           <h3 className='text-lg font-semibold mb-2'>⚡ Activity</h3>
 
@@ -105,7 +100,7 @@ export default function BattleArena ({
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* RIGHT */}
       <div className='flex flex-col'>
         {/* Top Bar */}
         <div className='flex justify-between items-center px-4 py-2 border-b border-[#1a1a2e]'>
@@ -125,6 +120,7 @@ export default function BattleArena ({
             mode='battle'
             externalCode={code}
             setExternalCode={handleCodeChange}
+            problem={problem} // 🔧 pass for starterCode
           />
         </div>
       </div>

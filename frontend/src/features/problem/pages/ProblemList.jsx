@@ -1,25 +1,32 @@
 import { useEffect, useState } from 'react'
-import ProblemCard from '../components/ProblemCard' // 🔧 FIXED PATH
-import { getProblems } from '../services/problemService' // 🔧 FIXED PATH
+import ProblemCard from '../components/ProblemCard'
+import { getProblems } from '../services/problemService'
+import { getProblemStatus } from '../../submissions/services/submissionService' // 🔧 ADD
 
 function ProblemList () {
   const [problems, setProblems] = useState([])
+  const [statusMap, setStatusMap] = useState({}) // 🔧 ADD
   const [filter, setFilter] = useState('All')
-  const [loading, setLoading] = useState(true) // 🔧 ADDED
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchProblems = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await getProblems()
-        setProblems(res.data || res) // 🔧 handle axios response
+        const [problemsRes, statusRes] = await Promise.all([
+          getProblems(),
+          getProblemStatus() // 🔥 get solved/attempted
+        ])
+
+        setProblems(problemsRes.data || problemsRes)
+        setStatusMap(statusRes || {}) // 🔧 store status
       } catch (err) {
-        console.error('Fetch problems error:', err.message)
+        console.error('Fetch error:', err.message)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProblems()
+    fetchAll()
   }, [])
 
   const filtered =
@@ -48,7 +55,7 @@ function ProblemList () {
         </div>
       </div>
 
-      {/* 🔧 LOADING */}
+      {/* LOADING */}
       {loading && (
         <div className='text-gray-400 text-sm'>Loading problems...</div>
       )}
@@ -57,10 +64,14 @@ function ProblemList () {
       {!loading && (
         <div className='space-y-2'>
           {filtered.length === 0 ? (
-            <p className='text-gray-500 text-sm'>No problems found</p> // 🔧 EMPTY STATE
+            <p className='text-gray-500 text-sm'>No problems found</p>
           ) : (
             filtered.map(problem => (
-              <ProblemCard key={problem._id} problem={problem} />
+              <ProblemCard
+                key={problem._id}
+                problem={problem}
+                status={statusMap[problem._id]} // 🔥 PASS STATUS
+              />
             ))
           )}
         </div>

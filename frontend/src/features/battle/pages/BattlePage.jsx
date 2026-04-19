@@ -1,21 +1,28 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useBattle } from '../context/BattleContext'
-import { connectSocket } from '../services/socket'
+import { connectSocket, disconnectSocket } from '../services/socket' // 🔧 use cleanup
 
-import RoomLobby from '../battle-components/RoomLobby'
-import BattleArena from '../battle-components/BattleArena'
+import RoomLobby from '../components/RoomLobby' // 🔧 FIX PATH
+import BattleArena from '../components/BattleArena' // 🔧 FIX PATH
 
 export default function BattlePage () {
-  const { id } = useParams() // ✅ use only one param
+  const { id } = useParams()
 
-  const { username, setRoomId, players, setPlayers, started, setStarted } =
-    useBattle()
+  const {
+    username,
+    setRoomId,
+    players,
+    setPlayers,
+    started,
+    setStarted,
+    resetBattle // 🔧 use reset
+  } = useBattle()
 
   const [isHost, setIsHost] = useState(false)
   const [startTime, setStartTime] = useState(null)
   const [leaderboard, setLeaderboard] = useState([])
-  const [problem, setProblem] = useState(null) // ✅ MISSING STATE FIX
+  const [problem, setProblem] = useState(null)
 
   useEffect(() => {
     const name = username || localStorage.getItem('username') || 'Player'
@@ -31,21 +38,24 @@ export default function BattlePage () {
 
     // 🔥 BATTLE START
     socket.on('battle_started', ({ startTime, problem }) => {
-      console.log('🔥 Battle started:', problem)
-
       setStarted(true)
       setStartTime(startTime)
       setProblem(problem)
+      setLeaderboard([]) // 🔧 reset leaderboard
     })
 
-    // 🔥 SUBMISSION UPDATE
+    // 🔥 SUBMISSION UPDATE (sorted)
     socket.on('submission_result', data => {
-      setLeaderboard(prev => [...prev, data])
+      setLeaderboard(prev => {
+        const updated = [...prev, data]
+        return updated.sort((a, b) => a.time - b.time) // 🔧 SORT
+      })
     })
 
     // 🔥 CLEANUP
     return () => {
-      socket.disconnect()
+      disconnectSocket() // 🔧 proper cleanup
+      resetBattle() // 🔧 reset context
     }
   }, [id])
 

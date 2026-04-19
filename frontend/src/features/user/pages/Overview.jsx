@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import ActivityHeatmap from '../../../shared/components/ActivityHeatmap'
+import { useAuth } from '../auth/context/AuthContext' // 🔧 FIX PATH
+import ActivityHeatmap from '../../shared/components/ActivityHeatmap' // 🔧 FIX PATH
 
 import {
   getStats,
   getActivity,
   getRecent,
   getStreak
-} from '../../submission/services/submissionService'
+} from '../submissions/services/submissionService' // 🔧 FIX PATH + no token
 
 function Overview () {
   const navigate = useNavigate()
@@ -25,18 +25,17 @@ function Overview () {
       try {
         if (!user) return
 
-        const token = user.token
-        const statsData = await getStats(token)
-        const activity = await getActivity(token)
-        const recentData = await getRecent(token)
-        const streakData = await getStreak(token)
+        // 🔥 no token needed (axios handles it)
+        const [statsData, activity, recentData, streakData] = await Promise.all(
+          [getStats(), getActivity(), getRecent(), getStreak()]
+        )
 
-        setStats(statsData)
-        setActivityData(activity)
-        setRecent(recentData)
-        setStreak(streakData.streak)
+        setStats(statsData || {})
+        setActivityData(activity || {})
+        setRecent(recentData || [])
+        setStreak(streakData?.streak || 0)
       } catch (err) {
-        console.error(err)
+        console.error('Overview error:', err.message)
       } finally {
         setLoading(false)
       }
@@ -101,29 +100,31 @@ function Overview () {
           <p className='text-gray-400 text-sm'>No activity yet</p>
         ) : (
           <div className='space-y-2'>
-            {recent.map(item => (
-              <div
-                key={item._id}
-                onClick={() =>
-                  navigate(`/dashboard/practice/${item.problem.slug}`)
-                }
-                className='flex justify-between items-center px-3 py-2 rounded-md hover:bg-[#222222] cursor-pointer'
-              >
-                <span className='text-sm text-gray-200'>
-                  {item.problem?.title}
-                </span>
+            {recent.map(item => {
+              const path = item.problem?.slug || item.problem?._id
 
-                <span
-                  className={`text-xs px-2 py-1 rounded-full ${
-                    item.status === 'solved'
-                      ? 'bg-green-500/10 text-green-400'
-                      : 'bg-yellow-500/10 text-yellow-400'
-                  }`}
+              return (
+                <div
+                  key={item._id}
+                  onClick={() => navigate(`/dashboard/practice/${path}`)}
+                  className='flex justify-between items-center px-3 py-2 rounded-md hover:bg-[#222222] cursor-pointer'
                 >
-                  {item.status === 'solved' ? 'Solved' : 'Attempted'}
-                </span>
-              </div>
-            ))}
+                  <span className='text-sm text-gray-200'>
+                    {item.problem?.title || 'Unknown Problem'}
+                  </span>
+
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      item.status === 'solved'
+                        ? 'bg-green-500/10 text-green-400'
+                        : 'bg-yellow-500/10 text-yellow-400'
+                    }`}
+                  >
+                    {item.status === 'solved' ? 'Solved' : 'Attempted'}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

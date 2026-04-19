@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import MonacoEditor from '@monaco-editor/react'
-import { createSubmission } from '../../submissions/services/submissionService' // 🔧 ADD
+import { createSubmission } from '../../submissions/services/submissionService'
 
 const DEFAULT_CODE = {
   javascript: '// Write JavaScript code here',
@@ -18,15 +18,19 @@ export default function Editor ({
   const [code, setCode] = useState(DEFAULT_CODE.javascript)
   const [output, setOutput] = useState('')
   const [running, setRunning] = useState(false)
-  const [submitting, setSubmitting] = useState(false) // 🔧 ADDED
+  const [submitting, setSubmitting] = useState(false)
 
-  // 🔥 LOAD STARTER CODE PROPERLY
+  // 🔥 LOAD STARTER CODE (SAFE)
   useEffect(() => {
-    if (problem) {
-      const starter = problem?.starterCode?.[language] || DEFAULT_CODE[language]
+    if (!problem) return
+
+    const starter = problem?.starterCode?.[language] || DEFAULT_CODE[language]
+
+    // 🔧 don't override external (battle sync)
+    if (!externalCode) {
       setCode(starter)
     }
-  }, [problem, language]) // 🔧 FIX: react on language change
+  }, [problem, language])
 
   const currentCode = externalCode ?? code
 
@@ -37,21 +41,25 @@ export default function Editor ({
 
   const handleLanguageChange = lang => {
     setLanguage(lang)
+    setOutput('') // 🔧 reset output
   }
 
-  // 🔥 RUN (still mock for now)
+  // 🔥 RUN (mock for now)
   const handleRun = () => {
+    if (!currentCode) return
+
     setRunning(true)
     setOutput('Running...')
 
     setTimeout(() => {
       setOutput('Output:\n[Mock Result]')
       setRunning(false)
-    }, 800)
+    }, 700)
   }
 
-  // 🔥 SUBMIT (REAL API)
+  // 🔥 SUBMIT (only for practice mode)
   const handleSubmit = async () => {
+    if (mode !== 'practice') return // 🔧 battle handled by socket
     if (!problem?._id) return
 
     try {
@@ -60,11 +68,11 @@ export default function Editor ({
 
       const res = await createSubmission({
         problemId: problem._id,
-        status: 'Accepted', // 🔧 later replace with real judge
-        language
+        language,
+        status: 'Accepted' // 🔧 temporary
       })
 
-      setOutput(res.data?.message || 'Submitted!')
+      setOutput(res?.message || 'Submitted!')
     } catch (err) {
       console.error('Submit error:', err.message)
       setOutput('Submission failed')
@@ -95,6 +103,7 @@ export default function Editor ({
           <option value='python'>Python</option>
         </select>
 
+        {/* 🔥 buttons */}
         <div className='flex gap-2'>
           <button
             onClick={handleRun}
@@ -104,13 +113,15 @@ export default function Editor ({
             ▶ Run
           </button>
 
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className='px-4 py-1.5 text-sm rounded-md bg-emerald-600 hover:bg-emerald-700'
-          >
-            {submitting ? 'Submitting...' : 'Submit'}
-          </button>
+          {mode === 'practice' && (
+            <button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className='px-4 py-1.5 text-sm rounded-md bg-emerald-600 hover:bg-emerald-700'
+            >
+              {submitting ? 'Submitting...' : 'Submit'}
+            </button>
+          )}
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 function ProblemCard ({ problem, status }) {
   const navigate = useNavigate()
 
-  if (!problem) return null // 🔧 simplified check
+  if (!problem) return null
 
   const difficultyStyles = {
     Easy: 'text-green-400 bg-green-500/10 border-green-500/20',
@@ -19,12 +19,17 @@ function ProblemCard ({ problem, status }) {
       ? 'bg-green-500/10 text-green-400'
       : 'bg-yellow-500/10 text-yellow-400'
 
-  // 🔧 FIX: prefer slug → fallback to id
-  const problemPath = problem.slug || problem._id
+  // 🔥 SAFE PATH (slug > _id > id)
+  const problemPath = problem.slug || problem._id || problem.id
+
+  const handleClick = () => {
+    if (!problemPath) return // 🔧 safety
+    navigate(`/dashboard/practice/${problemPath}`)
+  }
 
   return (
     <div
-      onClick={() => navigate(`/dashboard/practice/${problemPath}`)} // 🔧 FIXED routing
+      onClick={handleClick}
       className='flex justify-between items-center px-4 py-3 rounded-xl cursor-pointer 
                  bg-[#0f0f1a] border border-[#1a1a2e]
                  hover:bg-[#151528] hover:border-[#2a2a40]
@@ -32,7 +37,7 @@ function ProblemCard ({ problem, status }) {
     >
       {/* LEFT */}
       <div className='flex items-center gap-3'>
-        {/* STATUS ICON */}
+        {/* STATUS */}
         {statusIcon ? (
           <span
             className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${statusStyles}`}
@@ -44,18 +49,21 @@ function ProblemCard ({ problem, status }) {
         )}
 
         {/* TITLE */}
-        <span className='text-sm font-medium text-gray-200'>
+        <span className='text-sm font-medium text-gray-200 truncate max-w-45'>
           {problem.title}
         </span>
       </div>
 
-      {/* DIFFICULTY */}
-      <span
-        className={`text-[11px] font-semibold px-3 py-1 rounded-full border whitespace-nowrap
-        ${difficultyStyles[problem.difficulty]}`}
-      >
-        {problem.difficulty}
-      </span>
+      {/* RIGHT */}
+      <div className='flex items-center gap-2'>
+        {/* DIFFICULTY */}
+        <span
+          className={`text-[11px] font-semibold px-3 py-1 rounded-full border whitespace-nowrap
+          ${difficultyStyles[problem.difficulty]}`}
+        >
+          {problem.difficulty}
+        </span>
+      </div>
     </div>
   )
 }

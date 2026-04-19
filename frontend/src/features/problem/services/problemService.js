@@ -1,15 +1,4 @@
-import axios from "axios";
-
-const API = axios.create({
-  baseURL: "http://localhost:5005/api",
-});
-
-// 🔐 attach token automatically
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+import API from "../../shared/utils/axios"; // 🔧 USE GLOBAL INSTANCE
 
 // ✅ GET ALL PROBLEMS
 export const getProblems = async () => {
@@ -17,26 +6,26 @@ export const getProblems = async () => {
   return res.data;
 };
 
-// ✅ GET SINGLE PROBLEM
-export const getProblem = async (_id) => {
-  const res = await API.get(`/problems/${_id}`);
+// ✅ GET SINGLE (slug or id)
+export const getProblemById = async (id) => {
+  const res = await API.get(`/problems/${id}`);
   return res.data;
 };
 
-// ✅ CREATE
+// ✅ CREATE (ADMIN)
 export const createProblem = async (data) => {
   const res = await API.post("/problems", data);
   return res.data;
 };
 
-// ✅ UPDATE
-export const updateProblem = async (_id, data) => {
-  const res = await API.put(`/problems/${_id}`, data);
+// ✅ UPDATE (ADMIN)
+export const updateProblem = async (id, data) => {
+  const res = await API.put(`/problems/${id}`, data);
   return res.data;
 };
 
-// ✅ DELETE
-export const deleteProblem = async (_id) => {
-  const res = await API.delete(`/problems/${_id}`);
+// ✅ DELETE (ADMIN)
+export const deleteProblem = async (id) => {
+  const res = await API.delete(`/problems/${id}`);
   return res.data;
 };
