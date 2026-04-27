@@ -1,15 +1,23 @@
+/**
+ * ============================================
+ * 🚀 ROOT APP
+ * ============================================
+ *
+ * Handles routing + global wrappers
+ */
+
 import { BrowserRouter } from 'react-router-dom'
+import { Suspense } from 'react'
 import '../style/app.css'
 
 import AppRoutes from './routes'
-import { BattleProvider } from '../features/battle/context/BattleContext'
 
 function App () {
   return (
     <BrowserRouter>
-      <BattleProvider>
+      <Suspense fallback={<div className='loading'>Loading...</div>}>
         <AppRoutes />
-      </BattleProvider>
+      </Suspense>
     </BrowserRouter>
   )
 }

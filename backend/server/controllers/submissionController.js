@@ -1,10 +1,30 @@
-// 🔥 FIXED: correct model paths + optimized + safe
+/**
+ * ============================================
+ * 📦 SUBMISSION CONTROLLER
+ * ============================================
+ *
+ * 📌 Responsibilities:
+ * 1. Save submission
+ * 2. Track stats (easy/medium/hard)
+ * 3. Activity graph
+ * 4. Recent submissions
+ * 5. Streak system
+ *
+ * 📌 Flow:
+ * User submits → Save → Update rating → Return response
+ */
 
 const Submission = require("../models/Submission");
 const Problem = require("../models/Problem");
-const User = require("../models/User"); // 🔧 FIXED path
+const User = require("../models/User");
 
-// ➤ CREATE SUBMISSION
+/**
+ * ============================================
+ * 📌 CREATE SUBMISSION
+ * ============================================
+ *
+ * Saves submission and updates user rating
+ */
 const createSubmission = async (req, res) => {
   try {
     const { problemId, status, language } = req.body;
@@ -14,19 +34,26 @@ const createSubmission = async (req, res) => {
       return res.status(400).json({ message: "Problem ID required" });
     }
 
-    const problem = await Problem.findById(problemId).lean();
+    /** 🔹 STEP 1: VERIFY PROBLEM */
+    const problem = await Problem.findById(problemId)
+      .select("difficulty")
+      .lean();
+
     if (!problem) {
       return res.status(404).json({ message: "Problem not found" });
     }
 
+    /** 🔹 STEP 2: NORMALIZE STATUS */
     const finalStatus = status === "Accepted" ? "solved" : "attempted";
 
+    /** 🔹 STEP 3: CHECK IF ALREADY SOLVED */
     const alreadySolved = await Submission.exists({
       user: userId,
       problem: problemId,
       status: "solved",
-    }); // 🔧 faster than findOne
+    });
 
+    /** 🔹 STEP 4: SAVE SUBMISSION */
     const submission = await Submission.create({
       user: userId,
       problem: problemId,
@@ -34,21 +61,24 @@ const createSubmission = async (req, res) => {
       language: language || "javascript",
     });
 
-    // 🔧 only update rating if needed
+    /** 🔹 STEP 5: UPDATE RATING (ONLY ON FIRST SOLVE) */
     if (finalStatus === "solved" && !alreadySolved) {
-      const inc =
+      const points =
         problem.difficulty === "Easy"
           ? 10
           : problem.difficulty === "Medium"
             ? 20
             : 30;
 
-      await User.findByIdAndUpdate(userId, { $inc: { rating: inc } }); // 🔧 atomic update
+      await User.findByIdAndUpdate(userId, {
+        $inc: { rating: points },
+      });
     }
 
+    /** 🔹 STEP 6: RESPONSE */
     res.status(201).json({
       message: alreadySolved
-        ? "Already solved (no extra rating)"
+        ? "Already solved (no extra points)"
         : "Submission recorded",
       submission,
     });
@@ -58,7 +88,16 @@ const createSubmission = async (req, res) => {
   }
 };
 
-// ➤ STATS
+/**
+ * ============================================
+ * 📊 GET USER STATS
+ * ============================================
+ *
+ * Returns:
+ * - total solved
+ * - total submissions
+ * - difficulty breakdown
+ */
 const getStats = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -82,7 +121,7 @@ const getStats = async (req, res) => {
 
           if (s.problem.difficulty === "Easy") easy++;
           else if (s.problem.difficulty === "Medium") medium++;
-          else if (s.problem.difficulty === "Hard") hard++;
+          else hard++;
         }
       }
     });
@@ -99,7 +138,13 @@ const getStats = async (req, res) => {
   }
 };
 
-// ➤ ACTIVITY
+/**
+ * ============================================
+ * 📅 ACTIVITY GRAPH
+ * ============================================
+ *
+ * Returns daily solved count
+ */
 const getActivity = async (req, res) => {
   try {
     const submissions = await Submission.find({
@@ -109,8 +154,8 @@ const getActivity = async (req, res) => {
 
     const activity = {};
 
-    submissions.forEach((sub) => {
-      const date = sub.createdAt.toISOString().split("T")[0];
+    submissions.forEach((s) => {
+      const date = s.createdAt.toISOString().split("T")[0];
       activity[date] = (activity[date] || 0) + 1;
     });
 
@@ -120,7 +165,11 @@ const getActivity = async (req, res) => {
   }
 };
 
-// ➤ RECENT
+/**
+ * ============================================
+ * 🕒 RECENT SUBMISSIONS
+ * ============================================
+ */
 const getRecent = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user._id })
@@ -130,10 +179,10 @@ const getRecent = async (req, res) => {
       .lean();
 
     const formatted = submissions.map((s) => ({
-      _id: s._id,
+      id: s._id,
       status: s.status,
       createdAt: s.createdAt,
-      problem: s.problem || null,
+      problem: s.problem,
     }));
 
     res.json(formatted);
@@ -142,7 +191,13 @@ const getRecent = async (req, res) => {
   }
 };
 
-// ➤ STREAK
+/**
+ * ============================================
+ * 🔥 STREAK SYSTEM
+ * ============================================
+ *
+ * Calculates consecutive solving days
+ */
 const getStreak = async (req, res) => {
   try {
     const submissions = await Submission.find({
@@ -174,30 +229,43 @@ const getStreak = async (req, res) => {
   }
 };
 
-// ➤ PROBLEM STATUS
+/**
+ * ============================================
+ * 📌 PROBLEM STATUS MAP
+ * ============================================
+ *
+ * Returns:
+ * { problemId: solved/attempted }
+ */
 const getProblemStatus = async (req, res) => {
   try {
-    const submissions = await Submission.find({ user: req.user._id }).lean();
+    const submissions = await Submission.find({
+      user: req.user._id,
+    }).lean();
 
-    const statusMap = {};
+    const map = {};
 
     submissions.forEach((s) => {
       const id = s.problem?.toString();
       if (!id) return;
 
-      if (s.status === "solved") statusMap[id] = "solved";
-      else if (!statusMap[id]) statusMap[id] = "attempted";
+      if (s.status === "solved") map[id] = "solved";
+      else if (!map[id]) map[id] = "attempted";
     });
 
-    res.json(statusMap);
+    res.json(map);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching problem status" });
+    res.status(500).json({ message: "Error fetching status" });
   }
 };
 
-// ➤ CLEAR (ADMIN)
+/**
+ * ============================================
+ * 🧹 CLEAR ALL (ADMIN ONLY)
+ * ============================================
+ */
 const clearSubmissions = async (req, res) => {
-  await Submission.deleteMany(); // 🔧 already protected via route
+  await Submission.deleteMany();
   res.json({ message: "All submissions cleared" });
 };
 

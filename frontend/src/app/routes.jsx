@@ -1,42 +1,51 @@
+/**
+ * ============================================
+ * 🛣️ APP ROUTES (PRODUCTION READY)
+ * ============================================
+ */
+
 import { Routes, Route } from 'react-router-dom'
+import { lazy } from 'react'
 
-// Public
-import Home from '../public/Home'
-import Login from '../features/auth/page/Login'
-import Register from '../features/auth/page/Register'
+// 🔓 Public
+const Home = lazy(() => import('../public/Home'))
+const Login = lazy(() => import('../features/auth/page/Login'))
+const Register = lazy(() => import('../features/auth/page/Register'))
 
-// Auth
+// 🔐 Core
 import ProtectedRoute from '../shared/components/ProtectedRoute'
-
-// Layout (🔥 FIXED)
 import DashboardLayout from '../shared/layouts/DashboardLayout'
 
 // User
-import Overview from '../features/user/pages/Overview'
-import Profile from '../features/user/pages/Profile'
-import Leaderboard from '../features/user/pages/Leaderboard'
+const Overview = lazy(() => import('../features/user/pages/Overview'))
+const Profile = lazy(() => import('../features/user/pages/Profile'))
+const Leaderboard = lazy(() => import('../features/user/pages/Leaderboard'))
 
 // Problems
-import Problems from '../features/problem/pages/Problems'
-import ProblemDetail from '../features/problem/pages/ProblemDetail'
+const Problems = lazy(() => import('../features/problem/pages/Problems'))
+const ProblemDetail = lazy(() =>
+  import('../features/problem/pages/ProblemDetail')
+)
 
 // Battle
-import BattleHome from '../features/battle/pages/BattleHome'
-import BattlePage from '../features/battle/pages/BattlePage'
+const BattleHome = lazy(() => import('../features/battle/pages/BattleHome'))
+const BattlePage = lazy(() => import('../features/battle/pages/BattlePage'))
 
 // Admin
-import AddProblem from '../features/admin/pages/AddProblem'
-import ManageProblems from '../features/admin/pages/ManageProblems'
+const AddProblem = lazy(() => import('../features/admin/pages/AddProblem'))
+const ManageProblems = lazy(() =>
+  import('../features/admin/pages/ManageProblems')
+)
 
 export default function AppRoutes () {
   return (
     <Routes>
-      {/* 🔓 Public */}
+      {/* PUBLIC */}
       <Route path='/' element={<Home />} />
       <Route path='/login' element={<Login />} />
       <Route path='/register' element={<Register />} />
 
-      {/* 🔐 Dashboard */}
+      {/* PROTECTED */}
       <Route
         path='/dashboard'
         element={
@@ -54,7 +63,7 @@ export default function AppRoutes () {
         {/* Battle */}
         <Route path='battle' element={<BattleHome />} />
 
-        {/* Others */}
+        {/* User */}
         <Route path='leaderboard' element={<Leaderboard />} />
         <Route path='profile' element={<Profile />} />
         <Route path='profile/:username' element={<Profile />} />
@@ -64,7 +73,7 @@ export default function AppRoutes () {
         <Route path='admin/manage-problems' element={<ManageProblems />} />
       </Route>
 
-      {/* 🔥 Battle Room (OUTSIDE DASHBOARD) */}
+      {/* OUTSIDE DASHBOARD */}
       <Route path='/battle/:id' element={<BattlePage />} />
     </Routes>
   )

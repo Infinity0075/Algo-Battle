@@ -1,71 +1,110 @@
-// 🔥 FIXED: correct model path + optimized + production safe
+/**
 
-const User = require("../models/User"); // 🔧 FIXED path
+ *
+ * 📌 Responsibilities:
+ * 1. Register user
+ * 2. Login user
+ * 3. Get current user (me)
+ *
+ * 📌 Flow:
+ * Request → Validate → DB → Token → Response
+ */
+
+const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
-// 🔥 Generate Token
+/**
+ 
+ *  GENERATE JWT TOKEN
+ */
 const generateToken = (id) => {
   if (!process.env.JWT_SECRET) {
-    throw new Error("JWT_SECRET is not configured");
+    throw new Error("JWT_SECRET not configured");
   }
+
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 };
 
-// 🔥 REGISTER USER
+/**
+ * REGISTER USER
+ */
 const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
+    /** 🔹 STEP 1: VALIDATION */
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
     const normalizedEmail = email.toLowerCase();
 
-    // 🔧 check existing
-    const userExists = await User.findOne({
+    /** 🔹 STEP 2: CHECK EXISTING */
+    const exists = await User.findOne({
       $or: [{ email: normalizedEmail }, { username }],
     });
 
-    if (userExists) {
+    if (exists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // 🔧 let schema handle hashing (removed manual bcrypt)
+    /** 🔹 STEP 3: CREATE USER */
     const user = await User.create({
       username,
       email: normalizedEmail,
       password,
     });
 
+    /** 🔹 STEP 4: RESPONSE */
     res.status(201).json({
       user: {
         id: user._id,
         username: user.username,
         email: user.email,
-        role: user.role, // 🔧 added
+        role: user.role,
       },
       token: generateToken(user._id),
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    console.error("REGISTER ERROR:", err.message);
+    res.status(500).json({ message: "Registration failed" });
   }
 };
 
-// 🔥 LOGIN USER
+/**
+ 
+ *  LOGIN USER
+ */
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    /** 🔹 STEP 1: VALIDATION */
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email & password required" });
+    }
+
     const normalizedEmail = email.toLowerCase();
 
-    // 🔧 include password explicitly (since select:false)
+    /** 🔹 STEP 2: FIND USER */
     const user = await User.findOne({ email: normalizedEmail }).select(
       "+password",
     );
 
-    if (!user || !(await user.matchPassword(password))) {
-      return res.status(400).json({ message: "Invalid email or password" });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    /** 🔹 STEP 3: CHECK PASSWORD */
+    const isMatch = await user.matchPassword(password);
+
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    /** 🔹 STEP 4: RESPONSE */
     res.status(200).json({
       user: {
         id: user._id,
@@ -75,27 +114,37 @@ const loginUser = async (req, res) => {
       },
       token: generateToken(user._id),
     });
-
-    // ❌ REMOVED: unnecessary all users log (security + performance)
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    console.error("LOGIN ERROR:", err.message);
+    res.status(500).json({ message: "Login failed" });
   }
 };
 
-// 🔥 GET ME
+/**
+ *
+ * Requires auth middleware
+ */
 const getMe = async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Unauthorized" });
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { _id, username, email, role } = req.user;
+
+    res.json({
+      id: _id,
+      username,
+      email,
+      role,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching user" });
   }
-
-  const { _id, username, email, role } = req.user;
-
-  res.status(200).json({
-    id: _id,
-    username,
-    email,
-    role,
-  });
 };
 
-module.exports = { registerUser, loginUser, getMe };
+module.exports = {
+  registerUser,
+  loginUser,
+  getMe,
+};

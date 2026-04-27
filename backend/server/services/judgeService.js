@@ -1,7 +1,4 @@
 /**
- * ============================================
- * 🧠 JUDGE SERVICE (FINAL VERSION)
- * ============================================
  *
  * 📌 Strategy:
  * 1. Try Piston API (free execution)
