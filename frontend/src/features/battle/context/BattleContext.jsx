@@ -1,6 +1,5 @@
-import { createContext, useContext, useState } from 'react'
-
-const BattleContext = createContext()
+import { useCallback, useState } from 'react'
+import BattleContext from './BattleContextCore'
 
 export const BattleProvider = ({ children }) => {
   const [roomId, setRoomId] = useState('')
@@ -11,17 +10,17 @@ export const BattleProvider = ({ children }) => {
   const [started, setStarted] = useState(false)
 
   // 🔥 SET USERNAME (persist)
-  const handleSetUsername = name => {
+  const handleSetUsername = useCallback(name => {
     setUsername(name)
     localStorage.setItem('username', name) // 🔧 save
-  }
+  }, [])
 
   // 🔥 RESET ROOM (important on leave)
-  const resetBattle = () => {
+  const resetBattle = useCallback(() => {
     setRoomId('')
     setPlayers([])
     setStarted(false)
-  }
+  }, [])
 
   return (
     <BattleContext.Provider
@@ -41,5 +40,3 @@ export const BattleProvider = ({ children }) => {
     </BattleContext.Provider>
   )
 }
-
-export const useBattle = () => useContext(BattleContext)

@@ -11,7 +11,6 @@ const diffConfig = {
 
 function ProblemDetail () {
   const { problemId } = useParams()
-  const id = problemId // 🔧 FIXED param usage
 
   const [problem, setProblem] = useState(null)
   const [loading, setLoading] = useState(true)

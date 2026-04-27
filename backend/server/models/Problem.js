@@ -44,6 +44,13 @@ const problemSchema = new mongoose.Schema(
     starterCode: {
       javascript: { type: String, default: "" }, // 🔧 safe default
       cpp: { type: String, default: "" },
+      python: { type: String, default: "" },
+    },
+
+    functionName: {
+      type: String,
+      default: "solution",
+      trim: true,
     },
 
     slug: {

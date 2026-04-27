@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useBattle } from '../context/BattleContext'
+import { useBattle } from '../context/useBattle'
 import { getRandomProblem } from '../services/battleService' // 🔧 USE API
 
 function Battle () {

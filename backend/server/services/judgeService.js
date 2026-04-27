@@ -13,7 +13,6 @@
  */
 
 const vm = require("vm");
-const fetch = require("node-fetch"); // 🔧 IMPORTANT
 const Problem = require("../models/Problem");
 
 /** ============================================
@@ -143,8 +142,14 @@ const runCode = async ({ code, language = "javascript", problemId }) => {
 
     try {
       /** 🔹 Try Piston */
+      const langConfig = LANG_CONFIG[language];
+
+      if (!langConfig) {
+        return { status: "Error", output: "Unsupported language" };
+      }
+
       const wrapped = getWrapper(language)(code, tc.input, fnName);
-      const data = await runViaPiston(wrapped, LANG_CONFIG[language]);
+      const data = await runViaPiston(wrapped, langConfig);
 
       if (data.run.stderr) {
         return {

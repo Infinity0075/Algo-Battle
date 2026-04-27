@@ -6,8 +6,7 @@ import { getSocket, sendCodeChange, sendSubmit } from '../services/socket'
 export default function BattleArena ({
   startTime,
   leaderboard = [],
-  problem,
-  username
+  problem
 }) {
   const [code, setCode] = useState('// Start coding...')
   const [submissions, setSubmissions] = useState([])
@@ -17,8 +16,8 @@ export default function BattleArena ({
     if (!socket) return // 🔧 safety
 
     // 🔥 CODE SYNC
-    socket.on('code_update', incomingCode => {
-      setCode(incomingCode)
+    socket.on('code_update', payload => {
+      setCode(typeof payload === 'string' ? payload : payload.code)
     })
 
     // 🔥 ACTIVITY LOG
@@ -93,7 +92,7 @@ export default function BattleArena ({
           <div className='space-y-1 text-sm max-h-40 overflow-y-auto'>
             {submissions.map((s, i) => (
               <div key={i} className='text-slate-400'>
-                {s.username} → {s.status}
+                {s.username || 'You'} → {s.status}
               </div>
             ))}
           </div>

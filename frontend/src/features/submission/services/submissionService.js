@@ -36,9 +36,4 @@ export const getProblemStatus = async () => {
 export const createSubmission = async (data) => {
   const res = await API.post("/submissions", data);
   return res.data;
-  await createSubmission({
-    problemId: problem._id,
-    status: result.status === "Accepted" ? "solved" : "attempted",
-    language,
-  });
 };

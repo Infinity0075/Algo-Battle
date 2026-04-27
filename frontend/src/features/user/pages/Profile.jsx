@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useAuth } from '../../auth/context/AuthContext.jsx'
+import { useAuth } from '../../auth/context/useAuth'
 import { getUserProfile } from '../services/userService'
 
 const G = `
@@ -129,7 +129,7 @@ function Profile () {
               No activity yet. Start solving problems!
             </p>
           ) : (
-            data.recent.map((item, i) => (
+            data.recent.map(item => (
               <div
                 key={item._id}
                 className='act-row flex items-center justify-between px-6 py-3.5 border-b border-stone-800/60 last:border-none transition-colors duration-150'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { useBattle } from '../context/BattleContext'
+import { useBattle } from '../context/useBattle'
 import { connectSocket, disconnectSocket } from '../services/socket' // 🔧 use cleanup
 
 import RoomLobby from '../components/RoomLobby' // 🔧 FIX PATH
@@ -45,11 +45,8 @@ export default function BattlePage () {
     })
 
     // 🔥 SUBMISSION UPDATE (sorted)
-    socket.on('submission_result', data => {
-      setLeaderboard(prev => {
-        const updated = [...prev, data]
-        return updated.sort((a, b) => a.time - b.time) // 🔧 SORT
-      })
+    socket.on('leaderboard_update', data => {
+      setLeaderboard(data)
     })
 
     // 🔥 CLEANUP
@@ -57,7 +54,7 @@ export default function BattlePage () {
       disconnectSocket() // 🔧 proper cleanup
       resetBattle() // 🔧 reset context
     }
-  }, [id])
+  }, [id, resetBattle, setPlayers, setRoomId, setStarted, username])
 
   return (
     <div className='min-h-screen bg-gray-900 text-white'>

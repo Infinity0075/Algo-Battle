@@ -8,7 +8,7 @@ const judgeCode = async (req, res) => {
       return res.status(400).json({ message: "Missing fields" });
     }
 
-    const result = await runCode({ code, language });
+    const result = await runCode({ code, language, problemId });
 
     res.json(result);
   } catch (err) {

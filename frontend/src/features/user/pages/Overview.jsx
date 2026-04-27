@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../features/auth/context/AuthContext' // 🔧 FIX PATH
+import { useAuth } from '../../../features/auth/context/useAuth'
 import ActivityHeatmap from '../../../shared/components/ActivityHeatmap' // 🔧 FIX PATH
 
 import {

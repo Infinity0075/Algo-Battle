@@ -36,7 +36,7 @@ function Leaderboard () {
       try {
         const data = await getLeaderboard()
         setUsers(data)
-      } catch (err) {
+      } catch {
         setError('Failed to load leaderboard')
       } finally {
         setLoading(false)

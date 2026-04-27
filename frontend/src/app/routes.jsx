@@ -33,6 +33,7 @@ const BattlePage = lazy(() => import('../features/battle/pages/BattlePage'))
 
 // Admin
 const AddProblem = lazy(() => import('../features/admin/pages/AddProblem'))
+const EditProblem = lazy(() => import('../features/admin/pages/EditProblem'))
 const ManageProblems = lazy(() =>
   import('../features/admin/pages/ManageProblems')
 )
@@ -70,6 +71,7 @@ export default function AppRoutes () {
 
         {/* Admin */}
         <Route path='admin/add-problem' element={<AddProblem />} />
+        <Route path='admin/edit/:id' element={<EditProblem />} />
         <Route path='admin/manage-problems' element={<ManageProblems />} />
       </Route>
 
