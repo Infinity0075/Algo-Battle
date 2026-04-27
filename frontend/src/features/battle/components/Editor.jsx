@@ -59,28 +59,42 @@ export default function Editor ({
 
   // 🔥 SUBMIT (only for practice mode)
   const handleSubmit = async () => {
-    if (mode !== 'practice') return // 🔧 battle handled by socket
     if (!problem?._id) return
 
     try {
       setSubmitting(true)
       setOutput('Submitting...')
 
-      const res = await createSubmission({
-        problemId: problem._id,
+      const result = await judgeCode({
+        code,
         language,
-        status: 'Accepted' // 🔧 temporary
+        problemId: problem._id
       })
 
-      setOutput(res?.message || 'Submitted!')
+      // 🔥 SHOW RESULT
+      const statusColor =
+        result.status === 'Accepted' ? 'text-green-400' : 'text-red-400'
+
+      setOutput(`
+Status: ${result.status}
+Time: ${result.time} ms
+Output:
+${result.output}
+`)
+
+      setOutput(`
+Status: ${result.status}
+Time: ${result.time} ms
+Output:
+${result.output}
+    `)
     } catch (err) {
-      console.error('Submit error:', err.message)
+      console.error(err)
       setOutput('Submission failed')
     } finally {
       setSubmitting(false)
     }
   }
-
   if (mode === 'practice' && !problem) {
     return (
       <div className='flex items-center justify-center h-full text-white'>
@@ -144,10 +158,14 @@ export default function Editor ({
       </div>
 
       {/* OUTPUT */}
-      <div className='h-32 border-t border-[#1a1a2e] bg-black p-3 text-sm font-mono text-green-400 overflow-y-auto'>
-        {running || submitting
-          ? 'Processing...'
-          : output || 'Output will appear here...'}
+      <div className='h-32 border-t border-[#1a1a2e] bg-black p-3 text-sm font-mono overflow-y-auto'>
+        {running || submitting ? (
+          <span className='text-yellow-400'>Processing...</span>
+        ) : output ? (
+          <pre className='text-green-400 whitespace-pre-wrap'>{output}</pre>
+        ) : (
+          <span className='text-gray-500'>Output will appear here...</span>
+        )}
       </div>
     </div>
   )

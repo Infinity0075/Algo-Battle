@@ -52,6 +52,12 @@ const problemSchema = new mongoose.Schema(
       required: true, // 🔧 enforced
       index: true,
     },
+    testCases: [
+      {
+        input: String,
+        output: String,
+      },
+    ],
   },
   { timestamps: true },
 );
