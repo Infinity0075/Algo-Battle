@@ -2,29 +2,44 @@ import { io } from "socket.io-client";
 
 let socket;
 
-// 🔥 CONNECT (singleton)
+// 🔥 GET BASE URL (DEV + PROD SAFE)
+const BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
+  "http://localhost:5005";
+
+// 🔥 CONNECT (singleton + stable)
 export const connectSocket = (roomId, username) => {
-  if (socket?.connected) return socket; // 🔧 prevent multiple connections
+  if (!socket) {
+    socket = io(BASE_URL, {
+      transports: ["websocket", "polling"], // ✅ FIX (IMPORTANT)
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-  socket = io(
-    import.meta.env.VITE_API_BASE_URL?.replace("/api", "") ||
-      "http://localhost:5005",
-    {
-      transports: ["websocket"], // 🔧 better performance
-    },
-  );
+    socket.on("connect", () => {
+      console.log("✅ Connected:", socket.id);
+    });
 
-  socket.on("connect", () => {
-    console.log("✅ Connected:", socket.id);
+    socket.on("disconnect", (reason) => {
+      console.log("❌ Disconnected:", reason);
+    });
 
-    if (roomId && username) {
+    socket.on("connect_error", (err) => {
+      console.log("❌ Connection Error:", err.message);
+    });
+  }
+
+  // 🔥 ALWAYS JOIN ROOM
+  if (roomId && username) {
+    if (socket.connected) {
       socket.emit("join_room", { roomId, username });
+    } else {
+      socket.once("connect", () => {
+        socket.emit("join_room", { roomId, username });
+      });
     }
-  });
-
-  socket.on("disconnect", () => {
-    console.log("❌ Disconnected");
-  });
+  }
 
   return socket;
 };
@@ -39,13 +54,13 @@ export const sendCodeChange = (code) => {
   }
 };
 
-export const sendSubmit = (code) => {
+export const sendSubmit = (code, language = "javascript") => {
   if (socket?.connected) {
-    socket.emit("submit_code", { code });
+    socket.emit("submit_code", { code, language });
   }
 };
 
-// 🔥 CLEANUP (IMPORTANT)
+// 🔥 CLEANUP
 export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();

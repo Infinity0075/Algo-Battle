@@ -1,7 +1,7 @@
-import API from "../../../shared/utils/axios";
+import apiClient from "../../../shared/api/apiClient";
 
 export const judgeCode = async (data) => {
-  const res = await API.post("/judge", data);
+  const res = await apiClient.post("/judge", data);
   return res.data;
 };
 

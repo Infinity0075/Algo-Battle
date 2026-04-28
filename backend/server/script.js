@@ -1,7 +1,7 @@
 /**
- *
- * Flow:
- * Request → Security → Routes → Socket → Judge → Response
+ * ============================================
+ * 🚀 MAIN SERVER (CLEAN - NO RATE LIMIT)
+ * ============================================
  */
 
 const express = require("express");
@@ -9,7 +9,6 @@ const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
-const rateLimit = require("express-rate-limit");
 require("dotenv").config();
 const http = require("http");
 const { Server } = require("socket.io");
@@ -31,34 +30,16 @@ connectDB();
 
 /** ================= SECURITY ================= */
 app.set("trust proxy", 1);
-
 app.use(helmet());
 app.use(compression());
-
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 /** ================= CORS ================= */
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
 
 /** ================= BODY ================= */
 app.use(express.json({ limit: "10kb" }));
-
-/** ================= RATE LIMIT ================= */
-const limiter = (max, msg) =>
-  rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max,
-    standardHeaders: true,
-    legacyHeaders: false,
-    message: { message: msg || "Too many requests" },
-  });
-
-// 🔥 ORDER FIXED (specific → general)
-app.use("/api/auth", limiter(10, "Too many auth attempts"));
-app.use("/api/judge", limiter(15, "Max 15 submissions/min"));
-app.use("/api", limiter(200));
 
 /** ================= HEALTH ================= */
 app.get("/", (req, res) => {
@@ -116,7 +97,6 @@ setInterval(
 io.on("connection", (socket) => {
   console.log("Connected:", socket.id);
 
-  /** JOIN ROOM */
   socket.on("join_room", ({ roomId, username }) => {
     if (
       !roomId ||
@@ -135,7 +115,7 @@ io.on("connection", (socket) => {
     if (!rooms.has(roomId)) {
       rooms.set(roomId, {
         users: [],
-        host: socket.id,
+        host: username, // ✅ FIXED (was socket.id)
         started: false,
         leaderboard: [],
         submissions: new Map(),
@@ -152,10 +132,20 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("room_data", sanitizeRoom(room));
   });
 
-  /** START BATTLE */
   socket.on("start_battle", async () => {
+    console.log("🚀 START REQUEST FROM:", socket.username);
+
     const room = rooms.get(socket.roomId);
-    if (!room || socket.id !== room.host || room.started) return;
+
+    console.log("HOST:", room?.host, "CURRENT:", socket.username);
+
+    // ✅ FIXED CHECK
+    if (!room || socket.username !== room.host || room.started) {
+      console.log("❌ BLOCKED START");
+      return;
+    }
+
+    console.log("✅ STARTING BATTLE");
 
     try {
       const count = await Problem.countDocuments({
@@ -170,7 +160,6 @@ io.on("connection", (socket) => {
         .skip(Math.floor(Math.random() * count))
         .lean();
 
-      /** 🔥 SAFE PROBLEM (no testCases) */
       const safeProblem = {
         _id: problem._id,
         title: problem.title,
@@ -194,7 +183,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  /** CODE SYNC */
   socket.on("code_change", ({ code }) => {
     if (!socket.roomId || typeof code !== "string" || code.length > 10000)
       return;
@@ -205,7 +193,6 @@ io.on("connection", (socket) => {
     });
   });
 
-  /** SUBMIT CODE */
   socket.on("submit_code", async ({ code, language }) => {
     const room = rooms.get(socket.roomId);
     if (!room || !room.started) return;
@@ -214,7 +201,6 @@ io.on("connection", (socket) => {
       return socket.emit("error", { message: "Invalid code" });
     }
 
-    // prevent duplicate win
     if (room.submissions.get(socket.id) === "Accepted") return;
 
     try {
@@ -232,7 +218,6 @@ io.on("connection", (socket) => {
           time: Date.now() - room.startTime,
         });
 
-        /** 🔥 SORT + RANK FIX */
         room.leaderboard.sort((a, b) => a.time - b.time);
         room.leaderboard.forEach((u, i) => (u.rank = i + 1));
 
@@ -246,7 +231,6 @@ io.on("connection", (socket) => {
     }
   });
 
-  /** DISCONNECT */
   socket.on("disconnect", () => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
@@ -255,8 +239,9 @@ io.on("connection", (socket) => {
 
     room.users = room.users.filter((u) => u.id !== socket.id);
 
-    if (room.host === socket.id) {
-      room.host = room.users[0]?.id || null;
+    // ✅ FIXED host reassignment (use username)
+    if (room.host === socket.username) {
+      room.host = room.users[0]?.username || null;
     }
 
     if (!room.users.length) {
@@ -275,19 +260,6 @@ const sanitizeRoom = (room) => ({
   started: room.started,
   leaderboard: room.leaderboard,
 });
-
-/** ================= SHUTDOWN ================= */
-const shutdown = (sig) => {
-  console.log(`${sig} shutting down...`);
-  server.close(() => process.exit(0));
-  setTimeout(() => process.exit(1), 10000);
-};
-
-process.on("SIGINT", () => shutdown("SIGINT"));
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("unhandledRejection", (err) =>
-  console.error("Unhandled:", err.message),
-);
 
 /** ================= START ================= */
 const PORT = process.env.PORT || 5005;

@@ -34,42 +34,41 @@ const registerUser = async (req, res) => {
   try {
     const { username, email, password } = req.body;
 
-    /** 🔹 STEP 1: VALIDATION */
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields required" });
     }
 
-    const normalizedEmail = email.toLowerCase();
-
-    /** 🔹 STEP 2: CHECK EXISTING */
     const exists = await User.findOne({
-      $or: [{ email: normalizedEmail }, { username }],
+      $or: [{ email }, { username }],
     });
 
     if (exists) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    /** 🔹 STEP 3: CREATE USER */
     const user = await User.create({
       username,
-      email: normalizedEmail,
+      email,
       password,
     });
 
-    /** 🔹 STEP 4: RESPONSE */
-    res.status(201).json({
+    if (!user) {
+      return res.status(500).json({ message: "User creation failed" });
+    }
+
+    return res.status(201).json({
+      token: generateToken(user._id),
       user: {
         id: user._id,
         username: user.username,
-        email: user.email,
         role: user.role,
       },
-      token: generateToken(user._id),
     });
   } catch (err) {
-    console.error("REGISTER ERROR:", err.message);
-    res.status(500).json({ message: "Registration failed" });
+    console.error("REGISTER ERROR:", err);
+    return res.status(500).json({
+      message: "Registration failed",
+    });
   }
 };
 

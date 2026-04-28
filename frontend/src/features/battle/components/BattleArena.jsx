@@ -3,11 +3,7 @@ import Editor from './Editor'
 import Timer from './Timer'
 import { getSocket, sendCodeChange, sendSubmit } from '../services/socket'
 
-export default function BattleArena ({
-  startTime,
-  leaderboard = [],
-  problem
-}) {
+export default function BattleArena ({ startTime, leaderboard = [], problem }) {
   const [code, setCode] = useState('// Start coding...')
   const [submissions, setSubmissions] = useState([])
 

@@ -4,6 +4,8 @@ export default function Timer ({ startTime }) {
   const [time, setTime] = useState(0)
 
   useEffect(() => {
+    if (!startTime) return
+
     const interval = setInterval(() => {
       setTime(Math.floor((Date.now() - startTime) / 1000))
     }, 1000)
@@ -11,5 +13,5 @@ export default function Timer ({ startTime }) {
     return () => clearInterval(interval)
   }, [startTime])
 
-  return <div className='bg-gray-700 p-2 text-center'>Time: {time}s</div>
+  return <div className='bg-gray-700 p-2'>Time: {time}s</div>
 }

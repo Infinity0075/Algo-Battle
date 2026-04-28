@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useBattle } from '../context/useBattle'
-import { connectSocket, disconnectSocket } from '../services/socket' // 🔧 use cleanup
+import { connectSocket, disconnectSocket } from '../services/socket'
 
-import RoomLobby from '../components/RoomLobby' // 🔧 FIX PATH
-import BattleArena from '../components/BattleArena' // 🔧 FIX PATH
+import RoomLobby from '../components/RoomLobby'
+import BattleArena from '../components/BattleArena'
 
 export default function BattlePage () {
   const { id } = useParams()
@@ -16,7 +16,7 @@ export default function BattlePage () {
     setPlayers,
     started,
     setStarted,
-    resetBattle // 🔧 use reset
+    resetBattle
   } = useBattle()
 
   const [isHost, setIsHost] = useState(false)
@@ -25,14 +25,30 @@ export default function BattlePage () {
   const [problem, setProblem] = useState(null)
 
   useEffect(() => {
-    const name = username || localStorage.getItem('username') || 'Player'
+    // 🔥 ALWAYS use stored username (NO fallback "Player")
+    const name = username || localStorage.getItem('username')
+
+    if (!name) {
+      console.log('❌ No username found')
+      return
+    }
 
     const socket = connectSocket(id, name)
 
+    // 🔥 CLEAN OLD LISTENERS
+    socket.off('room_data')
+    socket.off('battle_started')
+    socket.off('leaderboard_update')
+
     // 🔥 ROOM DATA
     socket.on('room_data', room => {
+      console.log('ROOM DATA:', room)
+
       setPlayers(room.users)
-      setIsHost(socket.id === room.host)
+
+      // ✅ FIX: compare username (NOT socket.id)
+      setIsHost(name === room.host)
+
       setRoomId(id)
     })
 
@@ -41,20 +57,23 @@ export default function BattlePage () {
       setStarted(true)
       setStartTime(startTime)
       setProblem(problem)
-      setLeaderboard([]) // 🔧 reset leaderboard
+      setLeaderboard([])
     })
 
-    // 🔥 SUBMISSION UPDATE (sorted)
+    // 🔥 LEADERBOARD
     socket.on('leaderboard_update', data => {
       setLeaderboard(data)
     })
 
-    // 🔥 CLEANUP
     return () => {
-      disconnectSocket() // 🔧 proper cleanup
-      resetBattle() // 🔧 reset context
+      socket.off('room_data')
+      socket.off('battle_started')
+      socket.off('leaderboard_update')
+
+      disconnectSocket()
+      resetBattle()
     }
-  }, [id, resetBattle, setPlayers, setRoomId, setStarted, username])
+  }, [id, username])
 
   return (
     <div className='min-h-screen bg-gray-900 text-white'>

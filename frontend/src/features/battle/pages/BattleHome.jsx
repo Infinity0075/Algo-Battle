@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBattle } from '../context/useBattle'
-import { getRandomProblem } from '../services/battleService' // 🔧 USE API
+import { getRandomProblem } from '../services/battleService'
 
 function Battle () {
   const navigate = useNavigate()
@@ -12,47 +12,63 @@ function Battle () {
   const [usernameInput, setUsernameInput] = useState('')
   const [createdRoom, setCreatedRoom] = useState('')
 
-  // 🔥 SOLO MODE → FETCH FROM BACKEND
+  // 🔥 SOLO MODE
   const startBattle = async () => {
     const problem = await getRandomProblem()
     if (!problem) return
 
     const path = problem.slug || problem._id
-
     navigate(`/dashboard/practice/${path}`)
   }
 
-  // 🔥 MULTIPLAYER
+  // 🔥 MULTIPLAYER JOIN
   const handleJoin = () => {
-    if (!roomInput || !usernameInput) return
+    if (!roomInput || !usernameInput) {
+      alert('Enter Room ID and Username bro 😑')
+      return
+    }
+
+    const name = usernameInput.trim()
 
     setRoomId(roomInput)
-    setUsername(usernameInput)
+    setUsername(name)
+
+    // ✅ persist username (IMPORTANT)
+    localStorage.setItem('username', name)
 
     navigate(`/battle/${roomInput}`)
   }
 
+  // 🔥 ROOM GENERATOR
   const generateRoomId = () =>
     Math.random().toString(36).substring(2, 6).toUpperCase()
 
+  // 🔥 CREATE ROOM
   const handleCreate = () => {
+    if (!usernameInput) {
+      alert('Enter Username bro 😑')
+      return
+    }
+
     const newRoom = generateRoomId()
+    const name = usernameInput.trim()
 
     setCreatedRoom(newRoom)
     setRoomId(newRoom)
-    setUsername(usernameInput || 'Player')
+    setUsername(name)
+
+    // ✅ persist username
+    localStorage.setItem('username', name)
 
     navigate(`/battle/${newRoom}`)
   }
 
   return (
     <div className='min-h-screen bg-[#05050a] text-white flex flex-col items-center justify-center px-4'>
-      {/* TITLE */}
       <div className='text-center mb-10'>
         <h1 className='text-4xl font-extrabold'>⚔️ Battle Mode</h1>
       </div>
 
-      {/* MODE SELECT */}
       {!mode && (
         <div className='flex gap-5'>
           <button
@@ -71,13 +87,12 @@ function Battle () {
         </div>
       )}
 
-      {/* MULTIPLAYER */}
       {mode === 'multi' && (
         <div className='w-full max-w-md bg-[#0f0f1a] border border-[#1a1a2e] rounded-2xl p-6'>
           <input
             placeholder='Room ID'
             value={roomInput}
-            onChange={e => setRoomInput(e.target.value)}
+            onChange={e => setRoomInput(e.target.value.toUpperCase())}
             className='w-full mb-3 p-3 bg-[#09090f] border border-[#1a1a2e]'
           />
 
@@ -108,7 +123,6 @@ function Battle () {
         </div>
       )}
 
-      {/* SOLO */}
       {mode === 'solo' && (
         <button
           onClick={startBattle}
