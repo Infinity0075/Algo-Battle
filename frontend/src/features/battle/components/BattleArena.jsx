@@ -3,20 +3,29 @@ import Editor from './Editor'
 import Timer from './Timer'
 import { getSocket, sendCodeChange, sendSubmit } from '../services/socket'
 
-export default function BattleArena ({ startTime, leaderboard = [], problem }) {
-  const [code, setCode] = useState('// Start coding...')
+export default function BattleArena ({ problem, startTime, leaderboard }) {
+  const [code, setCode] = useState('')
   const [submissions, setSubmissions] = useState([])
+
+  // ✅ Load starter code once
+  useEffect(() => {
+    if (!problem) return
+
+    const starter = problem?.starterCode?.javascript || '// Start coding...'
+
+    setCode(starter)
+  }, [problem])
 
   useEffect(() => {
     const socket = getSocket()
-    if (!socket) return // 🔧 safety
+    if (!socket) return
 
     // 🔥 CODE SYNC
     socket.on('code_update', payload => {
       setCode(typeof payload === 'string' ? payload : payload.code)
     })
 
-    // 🔥 ACTIVITY LOG
+    // 🔥 SUBMISSION RESULT
     socket.on('submission_result', data => {
       setSubmissions(prev => [...prev, data])
     })
@@ -32,60 +41,87 @@ export default function BattleArena ({ startTime, leaderboard = [], problem }) {
     sendCodeChange(val)
   }
 
-  // 🔥 FIX: no fake response handling (server emits result)
   const handleSubmit = () => {
-    sendSubmit(code)
+    sendSubmit(code, 'javascript')
   }
 
   if (!problem) {
-    return <div className='text-white p-6'>Loading problem...</div>
+    return (
+      <div className='flex items-center justify-center w-full text-white'>
+        Loading battle...
+      </div>
+    )
   }
 
   return (
-    <div className='grid grid-cols-2 h-screen bg-[#05050a] text-white'>
-      {/* LEFT */}
-      <div className='p-6 border-r border-[#1a1a2e] overflow-y-auto'>
-        {/* Problem */}
+    <div className='flex h-full bg-[#05050a] text-white'>
+      {/* 🔥 LEFT PANEL */}
+      <div className='w-1/2 border-r border-[#1a1a2e] overflow-y-auto p-6'>
+        {/* PROBLEM */}
         <div className='mb-6'>
-          <h2 className='text-xl font-bold mb-2'>📘 Problem</h2>
-          <p className='text-slate-300 text-sm font-semibold'>
-            {problem.title}
-          </p>
-          <p className='text-slate-500 text-xs mt-2 line-clamp-4'>
+          <h2 className='text-xl font-bold mb-3'>{problem.title}</h2>
+
+          <p className='text-slate-300 whitespace-pre-wrap leading-relaxed'>
             {problem.description}
           </p>
         </div>
 
-        {/* Leaderboard */}
-        <div>
-          <h3 className='text-lg font-semibold mb-3'>🏆 Leaderboard</h3>
+        {/* EXAMPLES */}
+        {problem.examples?.length > 0 && (
+          <div className='mb-6'>
+            <h3 className='text-sm font-semibold text-slate-400 mb-2'>
+              Examples
+            </h3>
 
-          <div className='space-y-2'>
-            {leaderboard.length === 0 && (
-              <p className='text-slate-500 text-sm'>No submissions yet</p>
-            )}
-
-            {leaderboard.map((p, i) => (
+            {problem.examples.map((ex, i) => (
               <div
                 key={i}
-                className='flex justify-between items-center bg-[#0f0f1a] border border-[#1a1a2e] px-3 py-2 rounded-lg'
+                className='bg-[#0f0f1a] border border-[#1a1a2e] p-3 rounded mb-2 text-sm font-mono'
               >
-                <span className='text-sm'>
-                  #{i + 1} {p.username}
-                </span>
-                <span className='text-xs text-emerald-400'>
-                  {(p.time / 1000).toFixed(2)}s {/* 🔧 better UX */}
-                </span>
+                <div className='text-slate-500'>Input:</div>
+                <pre className='text-cyan-400'>{ex.input}</pre>
+
+                <div className='text-slate-500 mt-2'>Output:</div>
+                <pre className='text-emerald-400'>{ex.output}</pre>
               </div>
             ))}
           </div>
+        )}
+
+        {/* LEADERBOARD */}
+        <div className='mb-6'>
+          <h3 className='text-sm font-semibold text-slate-400 mb-2'>
+            🏆 Leaderboard
+          </h3>
+
+          {leaderboard?.length === 0 ? (
+            <p className='text-slate-500 text-sm'>No submissions yet</p>
+          ) : (
+            <div className='space-y-2'>
+              {leaderboard.map((p, i) => (
+                <div
+                  key={i}
+                  className='flex justify-between bg-[#0f0f1a] border border-[#1a1a2e] px-3 py-2 rounded'
+                >
+                  <span>
+                    #{i + 1} {p.username}
+                  </span>
+                  <span className='text-emerald-400 text-sm'>
+                    {(p.time / 1000).toFixed(2)}s
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Activity */}
-        <div className='mt-6'>
-          <h3 className='text-lg font-semibold mb-2'>⚡ Activity</h3>
+        {/* ACTIVITY */}
+        <div>
+          <h3 className='text-sm font-semibold text-slate-400 mb-2'>
+            ⚡ Activity
+          </h3>
 
-          <div className='space-y-1 text-sm max-h-40 overflow-y-auto'>
+          <div className='text-sm space-y-1 max-h-40 overflow-y-auto'>
             {submissions.map((s, i) => (
               <div key={i} className='text-slate-400'>
                 {s.username || 'You'} → {s.status}
@@ -95,27 +131,27 @@ export default function BattleArena ({ startTime, leaderboard = [], problem }) {
         </div>
       </div>
 
-      {/* RIGHT */}
-      <div className='flex flex-col'>
-        {/* Top Bar */}
+      {/* 🔥 RIGHT PANEL */}
+      <div className='w-1/2 flex flex-col'>
+        {/* TOP BAR */}
         <div className='flex justify-between items-center px-4 py-2 border-b border-[#1a1a2e]'>
           <Timer startTime={startTime} />
 
           <button
             onClick={handleSubmit}
-            className='px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 rounded-md text-sm font-semibold shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+            className='px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-md text-sm'
           >
             Submit ⚡
           </button>
         </div>
 
-        {/* Editor */}
+        {/* EDITOR */}
         <div className='flex-1'>
           <Editor
             mode='battle'
             externalCode={code}
             setExternalCode={handleCodeChange}
-            problem={problem} // 🔧 pass for starterCode
+            problem={problem}
           />
         </div>
       </div>

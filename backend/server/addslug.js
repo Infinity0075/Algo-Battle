@@ -1,10 +1,8 @@
-// 🔥 IMPROVED: avoids duplicate slug crash
-
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 const Problem = require("../server/models/Problem");
-const connectDB = require("./config/db");
+const connectDB = require("../server/config/db"); // 🔥 FIX PATH
 
 const generateSlug = (title) =>
   title
@@ -19,28 +17,28 @@ const addSlugs = async () => {
 
     const problems = await Problem.find();
 
-    for (let problem of problems) {
+    for (const problem of problems) {
       if (!problem.slug) {
         let baseSlug = generateSlug(problem.title);
         let slug = baseSlug;
         let count = 1;
 
-        // 🔧 ensure unique slug
-        while (await Problem.findOne({ slug })) {
+        // 🔥 OPTIMIZED UNIQUE CHECK
+        while (await Problem.exists({ slug })) {
           slug = `${baseSlug}-${count++}`;
         }
 
         problem.slug = slug;
         await problem.save();
 
-        console.log(`✅ Updated: ${problem.title}`);
+        console.log(`✅ ${problem.title} → ${slug}`);
       }
     }
 
-    console.log("🔥 All slugs added!");
+    console.log("🔥 All slugs added successfully!");
     process.exit();
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error:", err.message);
     process.exit(1);
   }
 };

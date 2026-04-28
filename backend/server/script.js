@@ -1,6 +1,6 @@
 /**
  * ============================================
- * 🚀 MAIN SERVER (CLEAN - NO RATE LIMIT)
+ * 🚀 MAIN SERVER (CLEAN PRODUCTION VERSION)
  * ============================================
  */
 
@@ -60,7 +60,6 @@ app.use((req, res) => {
 
 /** ================= ERROR ================= */
 app.use((err, req, res, next) => {
-  console.error("ERROR:", err.message);
   res.status(500).json({
     message:
       process.env.NODE_ENV === "production"
@@ -79,11 +78,10 @@ const io = new Server(server, {
 /** ================= ROOMS ================= */
 const rooms = new Map();
 
-/** Cleanup old rooms */
+/** ================= CLEANUP ================= */
 setInterval(
   () => {
     const cutoff = Date.now() - 2 * 60 * 60 * 1000;
-
     for (const [id, room] of rooms.entries()) {
       if (room.createdAt < cutoff) {
         rooms.delete(id);
@@ -95,18 +93,8 @@ setInterval(
 
 /** ================= SOCKET ================= */
 io.on("connection", (socket) => {
-  console.log("Connected:", socket.id);
-
   socket.on("join_room", ({ roomId, username }) => {
-    if (
-      !roomId ||
-      typeof roomId !== "string" ||
-      roomId.length > 50 ||
-      !username ||
-      typeof username !== "string" ||
-      username.length > 20
-    )
-      return;
+    if (!roomId || !username) return;
 
     socket.join(roomId);
     socket.roomId = roomId;
@@ -115,7 +103,7 @@ io.on("connection", (socket) => {
     if (!rooms.has(roomId)) {
       rooms.set(roomId, {
         users: [],
-        host: username, // ✅ FIXED (was socket.id)
+        host: socket.id,
         started: false,
         leaderboard: [],
         submissions: new Map(),
@@ -132,20 +120,11 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("room_data", sanitizeRoom(room));
   });
 
+  /** ================= START BATTLE ================= */
   socket.on("start_battle", async () => {
-    console.log("🚀 START REQUEST FROM:", socket.username);
-
     const room = rooms.get(socket.roomId);
 
-    console.log("HOST:", room?.host, "CURRENT:", socket.username);
-
-    // ✅ FIXED CHECK
-    if (!room || socket.username !== room.host || room.started) {
-      console.log("❌ BLOCKED START");
-      return;
-    }
-
-    console.log("✅ STARTING BATTLE");
+    if (!room || socket.id !== room.host || room.started) return;
 
     try {
       const count = await Problem.countDocuments({
@@ -183,9 +162,9 @@ io.on("connection", (socket) => {
     }
   });
 
+  /** ================= CODE SYNC ================= */
   socket.on("code_change", ({ code }) => {
-    if (!socket.roomId || typeof code !== "string" || code.length > 10000)
-      return;
+    if (!socket.roomId) return;
 
     socket.to(socket.roomId).emit("code_update", {
       code,
@@ -193,15 +172,10 @@ io.on("connection", (socket) => {
     });
   });
 
+  /** ================= SUBMIT ================= */
   socket.on("submit_code", async ({ code, language }) => {
     const room = rooms.get(socket.roomId);
     if (!room || !room.started) return;
-
-    if (!code || typeof code !== "string" || code.length > 10000) {
-      return socket.emit("error", { message: "Invalid code" });
-    }
-
-    if (room.submissions.get(socket.id) === "Accepted") return;
 
     try {
       const result = await runCode({
@@ -226,34 +200,31 @@ io.on("connection", (socket) => {
 
       socket.emit("submission_result", result);
     } catch (err) {
-      console.error(err.message);
       socket.emit("error", { message: "Submission failed" });
     }
   });
 
+  /** ================= DISCONNECT ================= */
   socket.on("disconnect", () => {
-    const roomId = socket.roomId;
-    if (!roomId || !rooms.has(roomId)) return;
-
-    const room = rooms.get(roomId);
+    const room = rooms.get(socket.roomId);
+    if (!room) return;
 
     room.users = room.users.filter((u) => u.id !== socket.id);
 
-    // ✅ FIXED host reassignment (use username)
-    if (room.host === socket.username) {
-      room.host = room.users[0]?.username || null;
+    if (room.host === socket.id) {
+      room.host = room.users[0]?.id || null;
     }
 
     if (!room.users.length) {
-      rooms.delete(roomId);
+      rooms.delete(socket.roomId);
       return;
     }
 
-    io.to(roomId).emit("room_data", sanitizeRoom(room));
+    io.to(socket.roomId).emit("room_data", sanitizeRoom(room));
   });
 });
 
-/** ================= HELPERS ================= */
+/** ================= HELPER ================= */
 const sanitizeRoom = (room) => ({
   users: room.users,
   host: room.host,

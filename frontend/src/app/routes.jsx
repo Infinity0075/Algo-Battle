@@ -1,11 +1,5 @@
-/**
- * ============================================
- * 🛣️ APP ROUTES (PRODUCTION READY)
- * ============================================
- */
-
 import { Routes, Route } from 'react-router-dom'
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 
 // 🔓 Public
 const Home = lazy(() => import('../public/Home'))
@@ -40,43 +34,52 @@ const ManageProblems = lazy(() =>
 
 export default function AppRoutes () {
   return (
-    <Routes>
-      {/* PUBLIC */}
-      <Route path='/' element={<Home />} />
-      <Route path='/login' element={<Login />} />
-      <Route path='/register' element={<Register />} />
+    <Suspense fallback={<div className='text-white p-6'>Loading...</div>}>
+      <Routes>
+        {/* PUBLIC */}
+        <Route path='/' element={<Home />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/register' element={<Register />} />
 
-      {/* PROTECTED */}
-      <Route
-        path='/dashboard'
-        element={
-          <ProtectedRoute>
-            <DashboardLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Overview />} />
+        {/* PROTECTED */}
+        <Route
+          path='/dashboard'
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Overview />} />
 
-        {/* Problems */}
-        <Route path='practice' element={<Problems />} />
-        <Route path='practice/:problemId' element={<ProblemDetail />} />
+          {/* Problems */}
+          <Route path='practice' element={<Problems />} />
+          <Route path='practice/:problemId' element={<ProblemDetail />} />
 
-        {/* Battle */}
-        <Route path='battle' element={<BattleHome />} />
+          {/* Battle */}
+          <Route path='battle' element={<BattleHome />} />
 
-        {/* User */}
-        <Route path='leaderboard' element={<Leaderboard />} />
-        <Route path='profile' element={<Profile />} />
-        <Route path='profile/:username' element={<Profile />} />
+          {/* User */}
+          <Route path='leaderboard' element={<Leaderboard />} />
+          <Route path='profile' element={<Profile />} />
+          <Route path='profile/:username' element={<Profile />} />
 
-        {/* Admin */}
-        <Route path='admin/add-problem' element={<AddProblem />} />
-        <Route path='admin/edit/:id' element={<EditProblem />} />
-        <Route path='admin/manage-problems' element={<ManageProblems />} />
-      </Route>
+          {/* Admin */}
+          <Route path='admin/add-problem' element={<AddProblem />} />
+          <Route path='admin/edit/:id' element={<EditProblem />} />
+          <Route path='admin/manage-problems' element={<ManageProblems />} />
+        </Route>
 
-      {/* OUTSIDE DASHBOARD */}
-      <Route path='/battle/:id' element={<BattlePage />} />
-    </Routes>
+        {/* 🔥 BATTLE ROOM (PROTECTED) */}
+        <Route
+          path='/battle/:id'
+          element={
+            <ProtectedRoute>
+              <BattlePage />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
+    </Suspense>
   )
 }

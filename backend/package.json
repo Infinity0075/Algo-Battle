@@ -5,7 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server/script.js --ignore frontend --ignore public",
-    "seed": "node server/seed/problem.js"
+    "seed": "node server/seed/seed.js"
   },
   "keywords": [],
   "author": "",
