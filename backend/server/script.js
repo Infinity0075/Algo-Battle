@@ -36,7 +36,20 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
 /** ================= CORS ================= */
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // allow requests with no origin (mobile apps, curl, Postman)
+      if (!origin) return callback(null, true);
+      if (origin === FRONTEND_URL) return callback(null, true);
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  }),
+);
 
 /** ================= BODY ================= */
 app.use(express.json({ limit: "10kb" }));
@@ -72,7 +85,11 @@ app.use((err, req, res, next) => {
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: { origin: FRONTEND_URL, credentials: true },
+  cors: {
+    origin: FRONTEND_URL,
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
 });
 
 /** ================= ROOMS ================= */
