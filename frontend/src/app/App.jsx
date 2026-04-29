@@ -8,7 +8,7 @@
 
 import { BrowserRouter } from 'react-router-dom'
 import { Suspense } from 'react'
-import '../style/app.css'
+import '../style/App.css'
 
 import AppRoutes from './routes'
 
